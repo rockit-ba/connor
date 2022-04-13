@@ -1,0 +1,18 @@
+[package]
+name = "connor"
+version = "0.1.0"
+edition = "2021"
+description = "服务发现和注册中心"
+
+[dependencies]
+futures = "0.3.21"
+tokio = { version = "1.17.0", features = ["macros", "rt", "rt-multi-thread", "net", "io-util", "time", "sync"] }
+tokio-stream = { version = "0.1.8", features = ["net"]}
+tokio-util = { version = "0.7.1", features = ["codec"] }
+
+bytes = "1.1.0"
+serde = "1.0.136"
+serde_derive = "1.0.136"
+serde_json = "1.0.79"
+
+anyhow = "1.0.56"
