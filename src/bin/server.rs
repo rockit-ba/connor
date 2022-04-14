@@ -19,14 +19,14 @@ async fn main() -> Result<()> {
         tokio::spawn(async move {
             let framed = Framed::new(socket, LengthDelimitedCodec::new());
             let (writer, reader) = &mut framed.split();
-            while let Ok(request) = reader.try_next().await {
-                if let Some(req) = request {
-                    let string = String::from_utf8((&req).to_vec()).expect("byte to json 失败！");
-                    let entry = serde_json::from_str::<Entry>(&string).expect("json to struct 失败！");
-                    println!("解码入站数据 {:?}", &entry);
-                    inbound_handle(&entry, writer).await;
-                }
+            // 注意这里的Ok(Some(req)) 不能拆开写，这样会导致一直 ok()
+            while let Ok(Some(req)) = reader.try_next().await {
+                let string = String::from_utf8((&req).to_vec()).expect("byte to json 失败！");
+                let entry = serde_json::from_str::<Entry>(&string).expect("json to struct 失败！");
+                println!("解码入站数据 {:?}", &entry);
+                inbound_handle(&entry, writer).await;
             }
+            println!("socket 已回收");
         });
     }
     Ok(())
