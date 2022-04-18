@@ -1,2 +1,7 @@
+mod models;
 mod transport;
-pub use transport::{TcpClient, TcpReader, TcpWriter};
+pub use models::{
+    DISCOVERY, DiscoveryRequest, NewService, REGISTRY, RegistryRequest, RegistryResponse,
+    TcpReader, TcpWriter,
+};
+pub use crate::server::ConnorServer;
