@@ -2,7 +2,6 @@
 
 use std::fmt::{Display, Formatter};
 
-#[derive(Debug)]
 pub struct Byte2JsonErr;
 
 impl Display for Byte2JsonErr {
@@ -11,7 +10,6 @@ impl Display for Byte2JsonErr {
     }
 }
 
-#[derive(Debug)]
 pub struct Struct2JsonErr;
 
 impl Display for Struct2JsonErr {
@@ -20,7 +18,6 @@ impl Display for Struct2JsonErr {
     }
 }
 
-#[derive(Debug)]
 pub struct Json2StructErr;
 
 impl Display for Json2StructErr {

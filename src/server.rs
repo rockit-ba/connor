@@ -62,7 +62,7 @@ impl ConnorServer {
                 // 注意这里的Ok(Some(req)) 不能拆开写，这样会导致一直 ok()
                 while let Ok(Some(req)) = reader.try_next().await {
                     let string = String::from_utf8((&req).to_vec())
-                        .unwrap_or_else(|_| { panic!("{}", Byte2JsonErr.to_string()) });
+                        .unwrap_or_else(|_| { panic!("{}", Byte2JsonErr) });
 
                     info!("入参：{}", string);
 

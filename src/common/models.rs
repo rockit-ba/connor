@@ -59,7 +59,7 @@ pub trait RpcCodec: Debug {
         where Self: Sized + Deserialize<'a>
     {
         Box::new(serde_json::from_str::<Self>(json)
-            .unwrap_or_else(|_| { panic!("{}", Json2StructErr.to_string()) }))
+            .unwrap_or_else(|_| { panic!("{}", Json2StructErr) }))
     }
 
     /// 将自己转换为 传输的json，并在前面添加了 kind 头标识
@@ -67,7 +67,7 @@ pub trait RpcCodec: Debug {
         where Self: Serialize
     {
         let json = serde_json::to_string(self)
-            .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr.to_string()) });
+            .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr) });
 
         format!("{}{}", Self::rpc_kind(), json)
     }
