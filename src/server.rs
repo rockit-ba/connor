@@ -29,8 +29,7 @@ pub struct ConnorServer {
 
 impl Debug for ConnorServer {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ConnorServer")
-            .finish()
+        f.debug_struct("ConnorServer").finish()
     }
 }
 impl Default for ConnorServer {
@@ -55,9 +54,7 @@ impl ConnorServer {
         while let Some(socket) = listener_stream.try_next().await? {
             let arc_map = self.servers.clone();
             info!("有连接进入：{:?}", &socket.local_addr().unwrap());
-            // 每次有一个客户端的连接进来就创建一个 任务
-            // 如果不使用 move 是不能使用swap 外部的变量的，用了move之后，该数据就只能被当前的 任务使用。
-            // 当然可以使用 Arc
+
             tokio::spawn(async move {
                 let framed = Framed::new(socket, LengthDelimitedCodec::new());
                 let (writer, reader) = &mut framed.split();
@@ -142,7 +139,9 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
                 let map = map.read();
                 service_ids = map.values()
                     .flat_map(|service_list| {
-                        service_list.iter().cloned().map(|service| service.id)
+                        service_list.iter()
+                            .cloned()
+                            .map(|service| service.id)
                     })
                     .collect();
             }

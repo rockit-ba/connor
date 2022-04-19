@@ -20,7 +20,8 @@ pub type TcpWriter = SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>;
 
 /// 请求的公共方法
 pub trait RpcCodec: Debug {
-    fn get_rpc_kind(&self) -> String;
+    /// 获取类型
+    fn rpc_kind(&self) -> String;
 
     /// 从json转换为struct
     fn from_json<'a>(json: &'a str) -> Box<Self>
@@ -37,7 +38,7 @@ pub trait RpcCodec: Debug {
         let json = serde_json::to_string(self)
             .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr.to_string()) });
 
-        format!("{}{}", &self.get_rpc_kind(), json)
+        format!("{}{}", &self.rpc_kind(), json)
     }
 }
 
@@ -58,7 +59,7 @@ pub struct NewService {
     pub meta: Option<HashMap<String, String>>,
 }
 impl RpcCodec for RegistryRequest {
-    fn get_rpc_kind(&self) -> String {
+    fn rpc_kind(&self) -> String {
         self.rpc_kind.clone()
     }
 }
@@ -81,8 +82,8 @@ impl RegistryResponse {
     }
 }
 impl RpcCodec for RegistryResponse {
-    fn get_rpc_kind(&self) -> String {
-        String::from(REGISTRY)
+    fn rpc_kind(&self) -> String {
+        self.rpc_kind.clone()
     }
 }
 
@@ -94,8 +95,8 @@ pub struct DiscoveryRequest {
     pub service_name: String,
 }
 impl RpcCodec for DiscoveryRequest {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY.to_string()
+    fn rpc_kind(&self) -> String {
+        self.rpc_kind.clone()
     }
 }
 
@@ -116,8 +117,8 @@ impl DiscoveryResponse {
 }
 
 impl RpcCodec for DiscoveryResponse {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY.to_string()
+    fn rpc_kind(&self) -> String {
+        self.rpc_kind.clone()
     }
 }
 
@@ -127,8 +128,8 @@ pub struct DiscoveryServiceIdsRequest {
 }
 
 impl RpcCodec for DiscoveryServiceIdsRequest {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY_IDS.to_string()
+    fn rpc_kind(&self) -> String {
+        self.rpc_kind.clone()
     }
 }
 
@@ -148,7 +149,7 @@ impl DiscoveryServiceIdsResponse {
 }
 
 impl RpcCodec for DiscoveryServiceIdsResponse {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY_IDS.to_string()
+    fn rpc_kind(&self) -> String {
+        self.rpc_kind.clone()
     }
 }
