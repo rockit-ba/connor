@@ -1,7 +1,7 @@
 //! connor server
 
-use crate::common::{DiscoveryRequest, DiscoveryResponse, NewService, RegistryRequest, RegistryResponse, TcpWriter};
-use crate::common::{DISCOVERY, REGISTRY};
+use crate::common::{DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse, NewService, RegistryRequest, RegistryResponse, TcpWriter};
+use crate::common::{DISCOVERY, REGISTRY, DISCOVERY_IDS};
 
 use anyhow::Result;
 use bytes::Bytes;
@@ -120,7 +120,7 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
             {
                 let map = map.read();
                 if let Some(lists) = map.get(&discovery_req.service_name) {
-                    services.append(&mut lists.clone());
+                    services = lists.clone();
                 }
             }
             let discovery_response = DiscoveryResponse::new(&discovery_req.service_name, services);
@@ -134,6 +134,32 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
             {
                 error!("{:?}", err);
             }
+        }
+        // 获取所有的service-ids
+        DISCOVERY_IDS => {
+            let service_ids_request = serde_json::from_str::<DiscoveryServiceIdsRequest>(json).expect("json to struct fail");
+            info!("解码入站数据 {:?}", &service_ids_request);
+            let service_ids;
+            {
+                let map = map.read();
+                service_ids = map.values()
+                    .flat_map(|service_list| {
+                        service_list.iter().cloned().map(|service| service.id)
+                    })
+                    .collect();
+            }
+            let ids_response = DiscoveryServiceIdsResponse::new(service_ids);
+            let json = serde_json::to_string(&ids_response).expect("struct to json fail");
+            let content = format!("{}{}", DISCOVERY_IDS, json);
+
+            info!("回送service ids：{}",&content);
+            if let Err(err) = writer
+                .send(Bytes::copy_from_slice(content.as_bytes()))
+                .await
+            {
+                error!("{:?}", err);
+            }
+
         }
         _ => {}
     }

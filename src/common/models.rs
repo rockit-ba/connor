@@ -10,7 +10,6 @@ use tokio_util::codec::{Framed, LengthDelimitedCodec};
 pub const REGISTRY: &str = "0";
 /// 服务发现：根据 service-name 查询 service list
 pub const DISCOVERY: &str = "1";
-#[allow(dead_code)]
 /// 服务发现:获取所有的 service IDS
 pub const DISCOVERY_IDS: &str = "2";
 
@@ -92,6 +91,26 @@ impl DiscoveryResponse {
             rpc_kind: DISCOVERY.to_string(),
             service_name: service_name.to_string(),
             services
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct DiscoveryServiceIdsRequest {
+    rpc_kind: String
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct DiscoveryServiceIdsResponse {
+    rpc_kind: String,
+    service_ids: Vec<String>
+}
+
+impl DiscoveryServiceIdsResponse {
+    pub fn new(service_ids: Vec<String>) -> Self {
+        Self {
+            rpc_kind: DISCOVERY_IDS.to_string(),
+            service_ids
         }
     }
 }

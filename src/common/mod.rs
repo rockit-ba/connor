@@ -2,7 +2,11 @@ mod models;
 mod transport;
 
 pub use models::{
-    DISCOVERY, DiscoveryRequest,DiscoveryResponse, NewService, REGISTRY, RegistryRequest, RegistryResponse,
+    DISCOVERY, DISCOVERY_IDS, REGISTRY,
+    NewService,
+    RegistryRequest, RegistryResponse,
+    DiscoveryRequest, DiscoveryResponse,
+    DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse,
     TcpReader, TcpWriter,
 };
 pub use crate::server::ConnorServer;
