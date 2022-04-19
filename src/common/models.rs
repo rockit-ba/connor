@@ -3,8 +3,10 @@ use futures::stream::{SplitSink, SplitStream};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::Debug;
+use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
+use crate::custom_error::{Json2StructErr, Struct2JsonErr};
 
 /// 服务注册
 pub const REGISTRY: &str = "0";
@@ -19,6 +21,24 @@ pub type TcpWriter = SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>;
 /// 请求的公共方法
 pub trait RpcCodec: Debug {
     fn get_rpc_kind(&self) -> String;
+
+    /// 从json转换为struct
+    fn from_json<'a>(json: &'a str) -> Box<Self>
+        where Self: Sized + Deserialize<'a>
+    {
+        Box::new(serde_json::from_str::<Self>(json)
+            .unwrap_or_else(|_| { panic!("{}", Json2StructErr.to_string()) }))
+    }
+
+    /// 将自己转换为 传输的json，并在前面添加了 kind 头标识
+    fn to_json(&self) -> String
+        where Self: Serialize
+    {
+        let json = serde_json::to_string(self)
+            .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr.to_string()) });
+
+        format!("{}{}", &self.get_rpc_kind(), json)
+    }
 }
 
 /// 注册服务请求
@@ -95,9 +115,21 @@ impl DiscoveryResponse {
     }
 }
 
+impl RpcCodec for DiscoveryResponse {
+    fn get_rpc_kind(&self) -> String {
+        DISCOVERY.to_string()
+    }
+}
+
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryServiceIdsRequest {
     rpc_kind: String
+}
+
+impl RpcCodec for DiscoveryServiceIdsRequest {
+    fn get_rpc_kind(&self) -> String {
+        DISCOVERY_IDS.to_string()
+    }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
@@ -112,5 +144,11 @@ impl DiscoveryServiceIdsResponse {
             rpc_kind: DISCOVERY_IDS.to_string(),
             service_ids
         }
+    }
+}
+
+impl RpcCodec for DiscoveryServiceIdsResponse {
+    fn get_rpc_kind(&self) -> String {
+        DISCOVERY_IDS.to_string()
     }
 }

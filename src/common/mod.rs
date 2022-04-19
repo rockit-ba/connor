@@ -1,12 +1,4 @@
-mod models;
+pub mod models;
 mod transport;
+pub mod custom_error;
 
-pub use models::{
-    DISCOVERY, DISCOVERY_IDS, REGISTRY,
-    NewService,
-    RegistryRequest, RegistryResponse,
-    DiscoveryRequest, DiscoveryResponse,
-    DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse,
-    TcpReader, TcpWriter,
-};
-pub use crate::server::ConnorServer;
