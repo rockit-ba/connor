@@ -1,13 +1,14 @@
 //! connor server
 
-use crate::models::{DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse, NewService, RegistryRequest, RegistryResponse, RpcCodec, TcpWriter};
-use crate::models::{DISCOVERY, REGISTRY, DISCOVERY_IDS};
+use crate::models::{DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse,
+                    NewService, RegistryRequest, RegistryResponse, RpcCodec, RpcKind, TcpWriter};
 
 use anyhow::Result;
 use bytes::Bytes;
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
+use std::str::FromStr;
 use std::sync::{Arc};
 use parking_lot::RwLock;
 use tokio::net::TcpListener;
@@ -62,10 +63,13 @@ impl ConnorServer {
                 while let Ok(Some(req)) = reader.try_next().await {
                     let string = String::from_utf8((&req).to_vec())
                         .unwrap_or_else(|_| { panic!("{}", Byte2JsonErr.to_string()) });
+
                     info!("入参：{}", string);
-                    let rpc_kind = &string[0..1];
-                    let json = &string[1..];
-                    inbound_handle(rpc_kind, json, writer, arc_map.clone()).await;
+
+                    if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
+                        let json = &string[1..];
+                        inbound_handle(rpc_kind, json, writer, arc_map.clone()).await;
+                    }
                 }
                 warn!("socket 已回收 \n");
             });
@@ -76,10 +80,10 @@ impl ConnorServer {
 
 /// 根据解析后的请求类型 和 json 体进行后续处理
 // #[instrument]
-async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map: ServersMap) {
+async fn inbound_handle(rpc_kind: RpcKind, json: &str, writer: &mut TcpWriter, map: ServersMap) {
     match rpc_kind {
         // 服务注册
-        REGISTRY => {
+        RpcKind::Registry => {
             let registry_req = RegistryRequest::from_json(json);
             info!("解码入站数据 {:?}", &registry_req);
             // 存储注册的服务
@@ -108,15 +112,14 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
             }
         }
         // 服务发现：根据service-name 获取所有的service
-        DISCOVERY => {
+        RpcKind::Discovery => {
             let discovery_req = DiscoveryRequest::from_json(json);
             info!("解码入站数据 {:?}", &discovery_req);
-            let mut services = Vec::<NewService>::new();
-
+            let mut services = None;
             {
                 let map = map.read();
                 if let Some(lists) = map.get(&discovery_req.service_name) {
-                    services = lists.clone();
+                    services = Some(lists.clone());
                 }
             }
             let discovery_response = DiscoveryResponse::new(&discovery_req.service_name, services);
@@ -131,7 +134,7 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
             }
         }
         // 获取所有的service-ids
-        DISCOVERY_IDS => {
+        RpcKind::DiscoveryIds => {
             let service_ids_request = DiscoveryServiceIdsRequest::from_json(json);
             info!("解码入站数据 {:?}", &service_ids_request);
             let service_ids;
@@ -157,6 +160,5 @@ async fn inbound_handle(rpc_kind: &str, json: &str, writer: &mut TcpWriter, map:
             }
 
         }
-        _ => {}
     }
 }
