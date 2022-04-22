@@ -4,6 +4,4 @@ mod transport;
 
 pub use common::custom_error;
 pub use common::models;
-
-pub use server::ConnorServer;
-
+pub use server::server_bootstrap;

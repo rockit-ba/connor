@@ -1,4 +1,4 @@
-use connor::ConnorServer;
+use connor::server_bootstrap::ConnorServer;
 use std::process::exit;
 use tracing::Level;
 use tracing_subscriber::filter::LevelFilter;
