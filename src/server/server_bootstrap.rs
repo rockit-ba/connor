@@ -56,7 +56,7 @@ impl ConnorServer {
 
         while let Some(socket) = listener_stream.try_next().await? {
             let arc_map = self.servers.clone();
-            info!("有连接进入：{:?}", &socket.local_addr().unwrap());
+            info!("connection come in：{:?}", &socket.local_addr().unwrap());
 
             tokio::spawn(async move {
                 let framed = Framed::new(socket, LengthDelimitedCodec::new());
@@ -66,14 +66,14 @@ impl ConnorServer {
                     let string = String::from_utf8((&req).to_vec())
                         .unwrap_or_else(|_| panic!("{}", Byte2JsonErr));
 
-                    info!("入参：{}", string);
+                    info!("inbound data：{}", string);
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
                         inbound_handle(rpc_kind, json, writer, arc_map.clone()).await;
                     }
                 }
-                warn!("socket 已回收 \n");
+                warn!("socket close \n");
             });
         }
         Ok(())

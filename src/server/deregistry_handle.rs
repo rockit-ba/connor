@@ -6,7 +6,7 @@ use tracing::info;
 
 pub async fn handle(json: &str, _writer: &mut TcpWriter, map: ServersMap) {
     let deregistry_request = DeregistryRequest::from_json(json);
-    info!("解码入站数据 {:?}", &deregistry_request);
+    info!("inbound data {:?}", &deregistry_request);
     {
         let mut map = map.write();
         if let Some(services) = map.get_mut(&deregistry_request.service_name) {
