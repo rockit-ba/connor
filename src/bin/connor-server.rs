@@ -14,7 +14,7 @@ async fn main() {
         .with(fmt::layer())
         .init();
 
-    let connor_server = ConnorServer::new();
+    let connor_server = &mut ConnorServer::new();
     if let Err(err) = connor_server.start().await {
         println!("{:?}", err);
         exit(1);

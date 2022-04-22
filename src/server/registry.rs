@@ -8,7 +8,7 @@ use tracing::{error, info};
 
 pub async fn handle(json: &str, writer: &mut TcpWriter, map: ServersMap) {
     let registry_req = RegistryRequest::from_json(json);
-    info!("inbound data {:?}", &registry_req);
+    info!("inbound data [ {:?} ]", &registry_req);
     // 存储注册的服务
     let service = &registry_req.service;
     {
@@ -21,9 +21,21 @@ pub async fn handle(json: &str, writer: &mut TcpWriter, map: ServersMap) {
                 servers.insert(service.name.clone(), vec![service.clone()]);
             }
         }
-        info!("service lists：{:?}", &servers);
+        info!("service lists [ {:?} ]", &servers);
     }
 
+    broadcast().await;
+
+    response(&registry_req,writer).await;
+
+}
+
+async fn broadcast() {
+
+}
+
+
+async fn response(registry_req: &RegistryRequest,writer: &mut TcpWriter) {
     // 响应注册服务
     let registry_response = RegistryResponse::new(true, &registry_req.service.name);
     let content = registry_response.to_json();

@@ -1,6 +1,6 @@
-mod deregistry_handle;
-mod discovery_handle;
-mod discoverynames_handle;
-mod registry_handle;
+mod deregistry;
+mod discovery;
+mod discovery_names;
+mod registry;
 pub mod server_bootstrap;
-mod servicecheck_handle;
+mod service_check;
