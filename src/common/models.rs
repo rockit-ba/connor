@@ -1,33 +1,76 @@
+//! 实体类
+
 use bytes::Bytes;
 use futures::stream::{SplitSink, SplitStream};
 use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fmt::Debug;
+use std::fmt::{Debug, Display, Formatter};
+use std::str::FromStr;
 use serde::{Deserialize, Serialize};
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use crate::custom_error::{Json2StructErr, Struct2JsonErr};
 
-/// 服务注册
-pub const REGISTRY: &str = "0";
-/// 服务发现：根据 service-name 查询 service list
-pub const DISCOVERY: &str = "1";
-/// 服务发现:获取所有的 service IDS
-pub const DISCOVERY_IDS: &str = "2";
 
 pub type TcpReader = SplitStream<Framed<TcpStream, LengthDelimitedCodec>>;
 pub type TcpWriter = SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>;
 
+/// 通信类型枚举
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
+pub enum RpcKind {
+    /// 服务注册
+    Registry,
+    /// 服务发现：根据 service-name 查询 service list
+    Discovery,
+    /// 服务发现:获取所有的 service IDS
+    DiscoveryIds,
+    /// 服务下线
+    Deregistry,
+    /// 服务检测
+    ServiceCheck
+
+}
+impl Display for RpcKind {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.clone() as u8)
+    }
+}
+impl FromStr for RpcKind {
+    type Err = &'static str;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "0" => {
+                Ok(RpcKind::Registry)
+            }
+            "1" => {
+                Ok(RpcKind::Discovery)
+            }
+            "2" => {
+                Ok(RpcKind::DiscoveryIds)
+            }
+            "3" => {
+                Ok(RpcKind::Deregistry)
+            }
+            "4" => {
+                Ok(RpcKind::ServiceCheck)
+            }
+            &_ => {Err("RpcKind Parser Fail")}
+        }
+    }
+}
+
 /// 请求的公共方法
 pub trait RpcCodec: Debug {
-    fn get_rpc_kind(&self) -> String;
+    /// 获取类型
+    fn rpc_kind() -> RpcKind;
 
     /// 从json转换为struct
     fn from_json<'a>(json: &'a str) -> Box<Self>
         where Self: Sized + Deserialize<'a>
     {
         Box::new(serde_json::from_str::<Self>(json)
-            .unwrap_or_else(|_| { panic!("{}", Json2StructErr.to_string()) }))
+            .unwrap_or_else(|_| { panic!("{}", Json2StructErr) }))
     }
 
     /// 将自己转换为 传输的json，并在前面添加了 kind 头标识
@@ -35,16 +78,15 @@ pub trait RpcCodec: Debug {
         where Self: Serialize
     {
         let json = serde_json::to_string(self)
-            .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr.to_string()) });
+            .unwrap_or_else(|_| { panic!("{}", Struct2JsonErr) });
 
-        format!("{}{}", &self.get_rpc_kind(), json)
+        format!("{}{}", Self::rpc_kind(), json)
     }
 }
 
 /// 注册服务请求
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct RegistryRequest {
-    rpc_kind: String,
     pub service: NewService,
 }
 /// 服务信息
@@ -58,15 +100,14 @@ pub struct NewService {
     pub meta: Option<HashMap<String, String>>,
 }
 impl RpcCodec for RegistryRequest {
-    fn get_rpc_kind(&self) -> String {
-        self.rpc_kind.clone()
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Registry
     }
 }
 
 /// 注册服务响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct RegistryResponse {
-    rpc_kind: String,
     // 是否成功
     pub success: bool,
     pub service_name: String,
@@ -74,15 +115,14 @@ pub struct RegistryResponse {
 impl RegistryResponse {
     pub fn new(success: bool, service_name: &str) -> Self {
         Self {
-            rpc_kind: String::from(REGISTRY),
             success,
             service_name: service_name.to_string(),
         }
     }
 }
 impl RpcCodec for RegistryResponse {
-    fn get_rpc_kind(&self) -> String {
-        String::from(REGISTRY)
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Registry
     }
 }
 
@@ -90,25 +130,22 @@ impl RpcCodec for RegistryResponse {
 /// 服务发现请求：根据service-name 获取所有的service
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryRequest {
-    rpc_kind: String,
     pub service_name: String,
 }
 impl RpcCodec for DiscoveryRequest {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY.to_string()
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Discovery
     }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryResponse {
-    rpc_kind: String,
     pub service_name: String,
-    pub services: Vec<NewService>,
+    pub services: Option<Vec<NewService>>,
 }
 impl DiscoveryResponse {
-    pub fn new(service_name: &str,services: Vec<NewService>) -> Self {
+    pub fn new(service_name: &str,services: Option<Vec<NewService>>) -> Self {
         Self {
-            rpc_kind: DISCOVERY.to_string(),
             service_name: service_name.to_string(),
             services
         }
@@ -116,39 +153,79 @@ impl DiscoveryResponse {
 }
 
 impl RpcCodec for DiscoveryResponse {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY.to_string()
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Discovery
     }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct DiscoveryServiceIdsRequest {
-    rpc_kind: String
-}
+pub struct DiscoveryServiceIdsRequest {}
 
 impl RpcCodec for DiscoveryServiceIdsRequest {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY_IDS.to_string()
+    fn rpc_kind() -> RpcKind {
+        RpcKind::DiscoveryIds
     }
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryServiceIdsResponse {
-    rpc_kind: String,
     service_ids: Vec<String>
 }
 
 impl DiscoveryServiceIdsResponse {
     pub fn new(service_ids: Vec<String>) -> Self {
         Self {
-            rpc_kind: DISCOVERY_IDS.to_string(),
             service_ids
         }
     }
 }
 
 impl RpcCodec for DiscoveryServiceIdsResponse {
-    fn get_rpc_kind(&self) -> String {
-        DISCOVERY_IDS.to_string()
+    fn rpc_kind() -> RpcKind {
+        RpcKind::DiscoveryIds
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct DeregistryRequest {
+    pub service_name: String,
+    pub service_id: String
+}
+
+impl RpcCodec for DeregistryRequest {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Deregistry
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct ServiceCheckRequest {
+    pub service_id: String
+}
+impl RpcCodec for ServiceCheckRequest {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::ServiceCheck
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct ServiceCheckResponse {
+    pub service_id: String
+}
+impl RpcCodec for ServiceCheckResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::ServiceCheck
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use crate::models::{RegistryResponse, RpcCodec, RpcKind};
+
+    #[test]
+    fn test() {
+        let response = RegistryResponse::new(true, "test");
+        let string = response.to_json();
+        println!("{}",string);
     }
 }
