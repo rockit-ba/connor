@@ -24,6 +24,11 @@ pub enum RpcKind {
     Discovery,
     /// 服务发现:获取所有的 service IDS
     DiscoveryIds,
+    /// 服务下线
+    Deregistry,
+    /// 服务检测
+    ServiceCheck
+
 }
 impl Display for RpcKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
@@ -43,6 +48,12 @@ impl FromStr for RpcKind {
             }
             "2" => {
                 Ok(RpcKind::DiscoveryIds)
+            }
+            "3" => {
+                Ok(RpcKind::Deregistry)
+            }
+            "4" => {
+                Ok(RpcKind::ServiceCheck)
             }
             &_ => {Err("RpcKind Parser Fail")}
         }
@@ -172,6 +183,38 @@ impl DiscoveryServiceIdsResponse {
 impl RpcCodec for DiscoveryServiceIdsResponse {
     fn rpc_kind() -> RpcKind {
         RpcKind::DiscoveryIds
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct DeregistryRequest {
+    pub service_name: String,
+    pub service_id: String
+}
+
+impl RpcCodec for DeregistryRequest {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Deregistry
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct ServiceCheckRequest {
+    pub service_id: String
+}
+impl RpcCodec for ServiceCheckRequest {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::ServiceCheck
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct ServiceCheckResponse {
+    pub service_id: String
+}
+impl RpcCodec for ServiceCheckResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::ServiceCheck
     }
 }
 

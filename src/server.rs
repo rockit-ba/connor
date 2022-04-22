@@ -1,7 +1,6 @@
 //! connor server
 
-use crate::models::{DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse,
-                    NewService, RegistryRequest, RegistryResponse, RpcCodec, RpcKind, TcpWriter};
+use crate::models::{DeregistryRequest, DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse, NewService, RegistryRequest, RegistryResponse, RpcCodec, RpcKind, ServiceCheckRequest, ServiceCheckResponse, TcpWriter};
 
 use anyhow::Result;
 use bytes::Bytes;
@@ -159,6 +158,48 @@ async fn inbound_handle(rpc_kind: RpcKind, json: &str, writer: &mut TcpWriter, m
                 error!("{:?}", err);
             }
 
+        }
+        // 服务下线
+        RpcKind::Deregistry => {
+            let deregistry_request = DeregistryRequest::from_json(json);
+            info!("解码入站数据 {:?}", &deregistry_request);
+            {
+                let mut map = map.write();
+                if let Some(services) = map.get_mut(&deregistry_request.service_name) {
+                    *services = services.iter()
+                        .filter(|&service| {
+                            service.id.ne(&deregistry_request.service_id)
+                        })
+                        .map(|service| {service.clone()})
+                        .collect();
+                }
+            }
+
+        }
+        // f服务检测
+        RpcKind::ServiceCheck => {
+            let check_request = ServiceCheckRequest::from_json(json);
+            info!("解码入站数据 {:?}", &check_request);
+            let service_id:String;
+            {
+                let map = map.read();
+                service_id = map.values()
+                    .flat_map(|ele| {
+                        ele.iter()
+                            .map(|ele| ele.id.clone())
+                            .filter(|ele| {ele.eq(&check_request.service_id)})
+                    }).collect();
+            }
+            info!("{}",&service_id);
+            let response = ServiceCheckResponse { service_id };
+            let content = response.to_json();
+            info!("回送service-id：{}",&content);
+            if let Err(err) = writer
+                .send(Bytes::copy_from_slice(content.as_bytes()))
+                .await
+            {
+                error!("{:?}", err);
+            }
         }
     }
 }
