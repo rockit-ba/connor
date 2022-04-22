@@ -1,6 +1,6 @@
 //! connor server
 
-use crate::models::{DeregistryRequest, DiscoveryRequest, DiscoveryResponse, DiscoveryServiceIdsRequest, DiscoveryServiceIdsResponse, NewService, RegistryRequest, RegistryResponse, RpcCodec, RpcKind, ServiceCheckRequest, ServiceCheckResponse, TcpWriter};
+use crate::models::{DeregistryRequest, DiscoveryRequest, DiscoveryResponse, DiscoveryServiceNamesRequest, DiscoveryServiceNamesResponse, NewService, RegistryRequest, RegistryResponse, RpcCodec, RpcKind, ServiceCheckRequest, ServiceCheckResponse, TcpWriter};
 
 use anyhow::Result;
 use bytes::Bytes;
@@ -132,25 +132,20 @@ async fn inbound_handle(rpc_kind: RpcKind, json: &str, writer: &mut TcpWriter, m
                 error!("{:?}", err);
             }
         }
-        // 获取所有的service-ids
-        RpcKind::DiscoveryIds => {
-            let service_ids_request = DiscoveryServiceIdsRequest::from_json(json);
-            info!("解码入站数据 {:?}", &service_ids_request);
-            let service_ids;
+        // 获取所有的service-names
+        RpcKind::DiscoveryNames => {
+            let service_names_request = DiscoveryServiceNamesRequest::from_json(json);
+            info!("解码入站数据 {:?}", &service_names_request);
+            let service_names;
             {
                 let map = map.read();
-                service_ids = map.values()
-                    .flat_map(|service_list| {
-                        service_list.iter()
-                            .cloned()
-                            .map(|service| service.id)
-                    })
+                service_names = map.keys().cloned()
                     .collect();
             }
-            let ids_response = DiscoveryServiceIdsResponse::new(service_ids);
-            let content = ids_response.to_json();
+            let names_response = DiscoveryServiceNamesResponse::new(service_names);
+            let content = names_response.to_json();
 
-            info!("回送service ids：{}",&content);
+            info!("回送service names：{}",&content);
             if let Err(err) = writer
                 .send(Bytes::copy_from_slice(content.as_bytes()))
                 .await
@@ -169,8 +164,7 @@ async fn inbound_handle(rpc_kind: RpcKind, json: &str, writer: &mut TcpWriter, m
                     *services = services.iter()
                         .filter(|&service| {
                             service.id.ne(&deregistry_request.service_id)
-                        })
-                        .map(|service| {service.clone()})
+                        }).cloned()
                         .collect();
                 }
             }
