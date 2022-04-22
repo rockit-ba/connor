@@ -22,19 +22,21 @@ pub enum RpcKind {
     Registry,
     /// 服务发现：根据 service-name 查询 service list
     Discovery,
-    /// 服务发现:获取所有的 service IDS
-    DiscoveryIds,
+    /// 服务发现:获取所有的 service names
+    DiscoveryNames,
     /// 服务下线
     Deregistry,
     /// 服务检测
     ServiceCheck
 
 }
+/// 序列化时用到
 impl Display for RpcKind {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.clone() as u8)
     }
 }
+/// 反序列化用到
 impl FromStr for RpcKind {
     type Err = &'static str;
 
@@ -47,7 +49,7 @@ impl FromStr for RpcKind {
                 Ok(RpcKind::Discovery)
             }
             "2" => {
-                Ok(RpcKind::DiscoveryIds)
+                Ok(RpcKind::DiscoveryNames)
             }
             "3" => {
                 Ok(RpcKind::Deregistry)
@@ -60,7 +62,7 @@ impl FromStr for RpcKind {
     }
 }
 
-/// 请求的公共方法
+/// 请求/响应实体的公共方法
 pub trait RpcCodec: Debug {
     /// 获取类型
     fn rpc_kind() -> RpcKind;
@@ -138,6 +140,7 @@ impl RpcCodec for DiscoveryRequest {
     }
 }
 
+/// 服务发现响应：根据service-name 获取所有的service
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryResponse {
     pub service_name: String,
@@ -151,53 +154,53 @@ impl DiscoveryResponse {
         }
     }
 }
-
 impl RpcCodec for DiscoveryResponse {
     fn rpc_kind() -> RpcKind {
         RpcKind::Discovery
     }
 }
 
+/// 所有的service name获取请求
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct DiscoveryServiceIdsRequest {}
+pub struct DiscoveryServiceNamesRequest {}
 
-impl RpcCodec for DiscoveryServiceIdsRequest {
+impl RpcCodec for DiscoveryServiceNamesRequest {
     fn rpc_kind() -> RpcKind {
-        RpcKind::DiscoveryIds
+        RpcKind::DiscoveryNames
     }
 }
 
+/// 所有的service name获取响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
-pub struct DiscoveryServiceIdsResponse {
-    service_ids: Vec<String>
+pub struct DiscoveryServiceNamesResponse {
+    service_names: Vec<String>
 }
-
-impl DiscoveryServiceIdsResponse {
-    pub fn new(service_ids: Vec<String>) -> Self {
+impl DiscoveryServiceNamesResponse {
+    pub fn new(service_names: Vec<String>) -> Self {
         Self {
-            service_ids
+            service_names
         }
     }
 }
-
-impl RpcCodec for DiscoveryServiceIdsResponse {
+impl RpcCodec for DiscoveryServiceNamesResponse {
     fn rpc_kind() -> RpcKind {
-        RpcKind::DiscoveryIds
+        RpcKind::DiscoveryNames
     }
 }
 
+/// 服务下线请求
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DeregistryRequest {
     pub service_name: String,
     pub service_id: String
 }
-
 impl RpcCodec for DeregistryRequest {
     fn rpc_kind() -> RpcKind {
         RpcKind::Deregistry
     }
 }
 
+/// 根据service-id 状态检测请求
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ServiceCheckRequest {
     pub service_id: String
@@ -208,6 +211,7 @@ impl RpcCodec for ServiceCheckRequest {
     }
 }
 
+/// 根据service-id 状态检测响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct ServiceCheckResponse {
     pub service_id: String
