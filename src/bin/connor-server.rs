@@ -1,3 +1,5 @@
+//! 启动bin
+
 use connor::server_bootstrap::ConnorServer;
 use std::process::exit;
 use tracing::Level;

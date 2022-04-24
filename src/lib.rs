@@ -1,6 +1,6 @@
 mod common;
-mod server;
 mod transport;
+mod server;
 
 pub use common::custom_error;
 pub use common::models;
