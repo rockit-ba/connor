@@ -57,28 +57,23 @@ impl ConnorServer {
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();
             info!("connection come in：{}", &peer_addr);
-
             // client注册的服务的容器
             let arc_map = self.servers.clone();
-
             // channel
-            let (writer, reader) = Framed::new(socket, LengthDelimitedCodec::new()).split();
-
+            let (mut writer, mut reader) =
+                Framed::new(socket, LengthDelimitedCodec::new()).split();
             // response client spawn
             // 用于监听处理响应客户端的请求
-            let receiver = tx.subscribe();
-            tokio::spawn(async move {
-                let mut receiver = receiver;
-                let mut writer = writer;
-                outbound_handle(&mut receiver, &mut writer).await;
+            let mut receiver = tx.subscribe();
+            let response_handle = tokio::spawn(async move {
+                while let Ok(data) = receiver.recv().await {
+                    outbound_handle(data, &mut writer).await;
+                }
             });
 
             // 用来发送响应客户端的消息
-            let sender = tx.clone();
+            let mut sender = tx.clone();
             tokio::spawn(async move {
-                let mut sender = sender;
-                let mut reader = reader;
-
                 // 注意这里的Ok(Some(req)) 不能拆开写，这样会导致一直 ok()
                 while let Ok(Some(req)) = reader.try_next().await {
                     let string = String::from_utf8((&req).to_vec())
@@ -90,8 +85,12 @@ impl ConnorServer {
                         inbound_handle(rpc_kind, json, &mut sender, arc_map.clone()).await;
                     }
                 }
-                warn!("Socket Close [{}] \n", &peer_addr);
+
+                warn!("Reader Close\n");
+                response_handle.abort();
+                warn!("Writer Close\n");
             });
+
         }
         Ok(())
     }

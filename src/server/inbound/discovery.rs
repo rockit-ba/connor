@@ -16,8 +16,8 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
         }
     }
     // 返回服务注册的事件
-    InboundHandleEvent::ServiceRefresh {
+    InboundHandleEvent::ServiceDiscovery {
         service_name: discovery_req.service_name.clone(),
-        service_list: services,
+        services,
     }
 }

@@ -27,9 +27,6 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
         info!("service lists [ {:?} ]", &servers);
 
         // 返回服务注册的事件
-        InboundHandleEvent::ServiceRefresh {
-            service_name: service.name.clone(),
-            service_list: Some(servers.get(&service.name).unwrap().clone()),
-        }
+        InboundHandleEvent::ServiceRegistry {success: true}
     }
 }

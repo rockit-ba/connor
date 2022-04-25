@@ -3,6 +3,16 @@
 use crate::models::{NewService, RpcCodec, RpcKind};
 use serde_derive::{Serialize, Deserialize};
 
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct RegistryResponse {
+    pub success: bool
+}
+impl RpcCodec for RegistryResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Registry
+    }
+}
+
 /// 服务发现响应：根据service-name 获取所有的service
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DiscoveryResponse {
