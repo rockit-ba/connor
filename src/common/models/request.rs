@@ -4,7 +4,7 @@ use crate::models::{NewService, RpcCodec, RpcKind};
 use serde_derive::{Serialize, Deserialize};
 
 /// 注册服务请求
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct RegistryRequest {
     pub service: NewService,
 }
@@ -36,7 +36,7 @@ impl RpcCodec for DiscoveryServiceNamesRequest {
 }
 
 /// 服务下线请求
-#[derive(Serialize, Deserialize, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
 pub struct DeregistryRequest {
     pub service_name: String,
     pub service_id: String,

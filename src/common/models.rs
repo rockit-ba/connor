@@ -56,7 +56,10 @@ impl FromStr for RpcKind {
 /// 入站处理器处理之后发送的响应客户端的事件
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleEvent {
-    ServiceRegistry {
+    ServiceRegistryResp {
+        success: bool,
+    },
+    ServiceDeregistryResp {
         success: bool,
     },
     ServiceDiscovery {

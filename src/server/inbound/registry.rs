@@ -1,14 +1,15 @@
 //! 服务注册
 
-use crate::models::{InboundHandleEvent,RpcCodec};
+use std::ops::Deref;
+use crate::models::{RpcCodec};
 use crate::server_bootstrap::ServersMap;
 use tracing::info;
 use crate::models::request::RegistryRequest;
 
 /// 请求处理
 ///
-/// 返回响应的事件
-pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
+/// 返回此次注册的服务结构体
+pub async fn handle(json: &str, map: ServersMap) -> RegistryRequest {
     let registry_req = RegistryRequest::from_json(json);
     info!("inbound data [ {:?} ]", &registry_req);
     // 存储注册的服务
@@ -25,8 +26,6 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
         }
 
         info!("service lists [ {:?} ]", &servers);
-
-        // 返回服务注册的事件
-        InboundHandleEvent::ServiceRegistry {success: true}
+        registry_req.deref().clone()
     }
 }

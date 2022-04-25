@@ -1,11 +1,12 @@
 //!  服务下线
 
-use crate::models::{InboundHandleEvent, RpcCodec};
+use std::ops::Deref;
+use crate::models::{RpcCodec};
 use crate::server_bootstrap::ServersMap;
 use tracing::info;
 use crate::models::request::DeregistryRequest;
 
-pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
+pub async fn handle(json: &str, map: ServersMap) -> DeregistryRequest {
     let deregistry_request = DeregistryRequest::from_json(json);
     info!("inbound data [ {:?} ]", &deregistry_request);
     {
@@ -18,8 +19,5 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
                 .collect();
         }
     }
-    InboundHandleEvent::ServiceOfOut {
-        service_name: deregistry_request.service_name.clone(),
-        service_id: deregistry_request.service_id.clone(),
-    }
+    deregistry_request.deref().clone()
 }

@@ -10,7 +10,7 @@ use crate::models::response::{DeregistryResponse, DiscoveryResponse, DiscoverySe
 pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
     match data {
         // 服务注册
-        InboundHandleEvent::ServiceRegistry {success} => {
+        InboundHandleEvent::ServiceRegistryResp {success} => {
             info!("Listener ServiceRegistry event");
             let registry_response = RegistryResponse {success};
             response(writer, registry_response.to_json()).await;
@@ -51,6 +51,9 @@ pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
             info!("Listener ServiceRefresh event");
             let discovery_response = DiscoveryResponse::new(&service_name, service_list);
             response(writer, discovery_response.to_json()).await;
+        }
+        InboundHandleEvent::ServiceDeregistryResp { success: _ } => {
+
         }
     }
 }
