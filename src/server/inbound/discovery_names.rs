@@ -14,5 +14,5 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
         service_names = map.keys().cloned().collect();
     }
 
-    InboundHandleEvent::ServiceNames { service_names }
+    InboundHandleEvent::ServiceNamesResp { service_names }
 }

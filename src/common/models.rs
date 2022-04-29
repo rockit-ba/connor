@@ -56,28 +56,28 @@ impl FromStr for RpcKind {
 /// 入站处理器处理之后发送的响应客户端的事件
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleEvent {
+    // 服务注册的响应
     ServiceRegistryResp {
         success: bool,
     },
+    // 服务下线的响应
     ServiceDeregistryResp {
         success: bool,
     },
-    ServiceDiscovery {
+    // 服务发现响应
+    ServiceDiscoveryResp {
         service_name: String,
         services: Option<Vec<NewService>>,
     },
-    /// 服务刷新
+    /// 服务刷新（Connor 主动向客户端推送）
     ServiceRefresh {
+        // 是否是注册，TRUE 表示是服务注册事件， FALSE 表示是服务下线事件
+        registry: bool,
         service_name: String,
         service_list: Option<Vec<NewService>>,
     },
-    /// 获取所有的 service name list
-    ServiceNames { service_names: Vec<String> },
-    /// 服务下线
-    ServiceOfOut {
-        service_name: String,
-        service_id: String,
-    },
+    /// 获取所有的 service name list 响应
+    ServiceNamesResp { service_names: Vec<String> },
     /// service 状态检测
     ServiceCheck { service_id: String },
 }

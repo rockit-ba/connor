@@ -52,17 +52,7 @@ impl RpcCodec for DiscoveryServiceNamesResponse {
 /// 服务下线响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DeregistryResponse {
-    pub service_name: String,
-    pub service_id: String,
-}
-
-impl DeregistryResponse {
-    pub fn new(service_name: &str, service_id: &str) -> Self {
-        Self {
-            service_name: service_name.to_string(),
-            service_id: service_id.to_string(),
-        }
-    }
+    pub success: bool
 }
 impl RpcCodec for DeregistryResponse {
     fn rpc_kind() -> RpcKind {

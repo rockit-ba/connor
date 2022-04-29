@@ -41,7 +41,7 @@ pub async fn inbound_handle(
         }
         // 服务下线
         RpcKind::Deregistry => {
-            let handle_event = deregistry::handle(json, map).await;
+            deregistry::handle(json, map).await;
             // 同样的这里首先也需要发送响应此次客户端的事件
             publisher(sender, ServiceDeregistryResp {success: true});
             // TODO 然后需要主动通知客户端更新缓存（删除这个服务）

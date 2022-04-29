@@ -16,26 +16,17 @@ pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
             response(writer, registry_response.to_json()).await;
         }
         // 服务发现
-        InboundHandleEvent::ServiceDiscovery
+        InboundHandleEvent::ServiceDiscoveryResp
         { service_name, services } => {
             info!("Listener ServiceDiscovery event");
             let discovery_resp = DiscoveryResponse::new(&service_name, services);
             response(writer, discovery_resp.to_json()).await;
         }
         // 获取所有的 service name list
-        InboundHandleEvent::ServiceNames { service_names } => {
+        InboundHandleEvent::ServiceNamesResp { service_names } => {
             info!("Listener ServiceNames event");
             let names_response = DiscoveryServiceNamesResponse::new(service_names);
             response(writer, names_response.to_json()).await;
-        }
-        // 服务下线
-        InboundHandleEvent::ServiceOfOut {
-            service_name,
-            service_id,
-        } => {
-            info!("Listener ServiceOfOut event");
-            let dereg_response = DeregistryResponse::new(&service_name, &service_id);
-            response(writer, dereg_response.to_json()).await;
         }
         // service 状态检测
         InboundHandleEvent::ServiceCheck { service_id } => {
@@ -43,8 +34,9 @@ pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
             let check_response = ServiceCheckResponse::new(&service_id);
             response(writer, check_response.to_json()).await;
         }
-        // 服务刷新
+        // 服务刷新(包括服务下线 和服务注册)
         InboundHandleEvent::ServiceRefresh {
+            registry,
             service_name,
             service_list,
         } => {
@@ -52,8 +44,10 @@ pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
             let discovery_response = DiscoveryResponse::new(&service_name, service_list);
             response(writer, discovery_response.to_json()).await;
         }
-        InboundHandleEvent::ServiceDeregistryResp { success: _ } => {
-
+        // 服务下线
+        InboundHandleEvent::ServiceDeregistryResp { success } => {
+            let dereg_response = DeregistryResponse { success };
+            response(writer, dereg_response.to_json()).await;
         }
     }
 }
