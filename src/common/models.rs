@@ -62,7 +62,7 @@ impl FromStr for RpcKind {
 
 /// 入站处理器处理之后发送的响应客户端的事件
 #[derive(PartialEq, Debug, Clone)]
-pub enum InboundHandleEvent {
+pub enum InboundHandleSingleEvent {
     /// 服务注册的响应
     ServiceRegistryResp {
         success: bool,
@@ -80,6 +80,9 @@ pub enum InboundHandleEvent {
     ServiceNamesResp { service_names: Vec<String> },
     /// service 状态检测
     ServiceCheckResp { service_id: String },
+}
+#[derive(PartialEq, Debug, Clone)]
+pub enum InboundHandleBroadcastEvent {
     /// 通知客户端缓存添加某服务
     AddServiceResp {
         service: NewService
@@ -90,6 +93,7 @@ pub enum InboundHandleEvent {
         service_name: String
     }
 }
+
 
 /// 请求/响应实体的公共方法
 pub trait RpcCodec: Debug {

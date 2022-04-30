@@ -3,48 +3,54 @@
 use bytes::Bytes;
 use futures::SinkExt;
 use tracing::{error, info};
-use crate::models::{InboundHandleEvent, RpcCodec, TcpWriter};
+use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcCodec, TcpWriter};
 use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse,
                               RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
 
 /// 根据inbound handle 发送的消息进行响应
-pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
+pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: &mut TcpWriter){
     match data {
         // 服务注册
-        InboundHandleEvent::ServiceRegistryResp {success} => {
+        InboundHandleSingleEvent::ServiceRegistryResp {success} => {
             info!("Listener ServiceRegistry event");
             let registry_response = RegistryResponse {success};
             response(writer, registry_response.to_json()).await;
         }
         // 服务发现
-        InboundHandleEvent::ServiceDiscoveryResp
+        InboundHandleSingleEvent::ServiceDiscoveryResp
         { service_name, services } => {
             info!("Listener ServiceDiscovery event");
             let discovery_resp = DiscoveryResponse::new(&service_name, services);
             response(writer, discovery_resp.to_json()).await;
         }
         // 获取所有的 service name list
-        InboundHandleEvent::ServiceNamesResp { service_names } => {
+        InboundHandleSingleEvent::ServiceNamesResp { service_names } => {
             info!("Listener ServiceNames event");
             let names_response = DiscoveryServiceNamesResponse::new(service_names);
             response(writer, names_response.to_json()).await;
         }
         // service 状态检测
-        InboundHandleEvent::ServiceCheckResp { service_id } => {
+        InboundHandleSingleEvent::ServiceCheckResp { service_id } => {
             info!("Listener ServiceCheck event");
             let check_response = ServiceCheckResponse::new(&service_id);
             response(writer, check_response.to_json()).await;
         }
         // 服务下线
-        InboundHandleEvent::ServiceDeregistryResp { success } => {
+        InboundHandleSingleEvent::ServiceDeregistryResp { success } => {
             let dereg_response = DeregistryResponse { success };
             response(writer, dereg_response.to_json()).await;
         }
-        InboundHandleEvent::AddServiceResp { service } => {
+
+    }
+}
+
+pub async fn outbound_broad_handle(data: InboundHandleBroadcastEvent, writer: &mut TcpWriter){
+    match data {
+        InboundHandleBroadcastEvent::AddServiceResp { service } => {
             let add_service_response = AddServiceResponse::new(service);
             response(writer, add_service_response.to_json()).await;
         }
-        InboundHandleEvent::RemoveServiceResp { service_id, service_name } => {
+        InboundHandleBroadcastEvent::RemoveServiceResp { service_id, service_name } => {
             let remove_service_response = RemoveServiceResponse::new(&service_id, &service_name);
             response(writer, remove_service_response.to_json()).await;
         }

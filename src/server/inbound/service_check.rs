@@ -1,11 +1,11 @@
 //! 服务检测
 
-use crate::models::{InboundHandleEvent, RpcCodec};
+use crate::models::{InboundHandleSingleEvent, RpcCodec};
 use crate::server_bootstrap::ServersMap;
 use tracing::info;
 use crate::models::request::ServiceCheckRequest;
 
-pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
+pub async fn handle(json: &str, map: ServersMap) -> InboundHandleSingleEvent {
     let check_request = ServiceCheckRequest::from_json(json);
     info!("inbound data [ {:?} ]", &check_request);
     let service_id: String;
@@ -21,5 +21,5 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
             .collect();
     }
     info!("{}", &service_id);
-    InboundHandleEvent::ServiceCheckResp { service_id }
+    InboundHandleSingleEvent::ServiceCheckResp { service_id }
 }

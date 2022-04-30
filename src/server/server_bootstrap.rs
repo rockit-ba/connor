@@ -1,6 +1,6 @@
 //! connor server_bootstrap
 
-use crate::models::{InboundHandleEvent, NewService, RpcKind};
+use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 
 use crate::custom_error::Byte2JsonErr;
 use crate::server::{inbound_handle, outbound_handle};
@@ -12,10 +12,11 @@ use std::fmt::{Debug, Formatter};
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::net::TcpListener;
-use tokio::sync::broadcast;
+use tokio::sync::{broadcast,mpsc};
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{info, warn};
+use crate::server::outbound::outbound_broad_handle;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -52,13 +53,13 @@ impl ConnorServer {
         info!("Connor Server_Bootstrap Startup");
         let mut listener_stream = TcpListenerStream::new(listener);
 
-        let (tx, _) = broadcast::channel::<InboundHandleEvent>(16);
-
+        let (tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(16);
 
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();
             info!("connection come in：{}", &peer_addr);
             // client注册的服务的容器
+            let (s_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(8);
             let arc_map = self.servers.clone();
             // channel
             let (mut writer, mut reader) =
@@ -67,13 +68,19 @@ impl ConnorServer {
             // 用于监听处理响应客户端的请求
             let mut receiver = tx.subscribe();
             let response_handle = tokio::spawn(async move {
-                while let Ok(data) = receiver.recv().await {
-                    outbound_handle(data, &mut writer).await;
+                loop {
+                    if let Ok(data) = receiver.recv().await {
+                        outbound_broad_handle(data,&mut writer).await;
+                    }
+                    if let Ok(data) = s_receiver.try_recv() {
+                        outbound_handle(data,&mut writer).await;
+                    }
                 }
             });
 
             // 用来发送响应客户端的消息
             let mut sender = tx.clone();
+            let mut s_sender = s_sender.clone();
             tokio::spawn(async move {
                 // 注意这里的Ok(Some(req)) 不能拆开写，这样会导致一直 ok()
                 while let Ok(Some(req)) = reader.try_next().await {
@@ -83,7 +90,7 @@ impl ConnorServer {
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
-                        inbound_handle(rpc_kind, json, &mut sender, arc_map.clone()).await;
+                        inbound_handle(rpc_kind, json, &mut sender, &mut s_sender,arc_map.clone()).await;
                     }
                 }
 
