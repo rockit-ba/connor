@@ -21,5 +21,5 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleEvent {
             .collect();
     }
     info!("{}", &service_id);
-    InboundHandleEvent::ServiceCheck { service_id }
+    InboundHandleEvent::ServiceCheckResp { service_id }
 }

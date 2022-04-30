@@ -65,7 +65,6 @@ impl RpcCodec for DeregistryResponse {
 pub struct ServiceCheckResponse {
     pub service_id: String,
 }
-
 impl ServiceCheckResponse {
     pub fn new(service_id: &str) -> Self {
         Self {
@@ -76,5 +75,38 @@ impl ServiceCheckResponse {
 impl RpcCodec for ServiceCheckResponse {
     fn rpc_kind() -> RpcKind {
         RpcKind::ServiceCheck
+    }
+}
+
+/// 当前客户端添加服务响应
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct AddServiceResponse {
+    service: NewService
+}
+impl AddServiceResponse {
+    pub fn new(service: NewService) -> Self {
+        Self {service}
+    }
+}
+impl RpcCodec for AddServiceResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::AddService
+    }
+}
+
+/// 当前客户端删除服务响应
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct RemoveServiceResponse {
+    service_id: String,
+    service_name: String
+}
+impl RemoveServiceResponse {
+    pub fn new(service_id: &str, service_name: &str) -> Self {
+        Self { service_id: service_id.to_string(), service_name: service_name.to_string() }
+    }
+}
+impl RpcCodec for RemoveServiceResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::RemoveService
     }
 }

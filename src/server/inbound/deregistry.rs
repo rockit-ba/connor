@@ -6,7 +6,7 @@ use crate::server_bootstrap::ServersMap;
 use tracing::info;
 use crate::models::request::DeregistryRequest;
 
-pub async fn handle(json: &str, map: ServersMap) {
+pub async fn handle(json: &str, map: ServersMap) -> DeregistryRequest{
     let deregistry_request = DeregistryRequest::from_json(json);
     info!("inbound data [ {:?} ]", &deregistry_request);
     {
@@ -19,4 +19,5 @@ pub async fn handle(json: &str, map: ServersMap) {
                 .collect();
         }
     }
+    deregistry_request.deref().clone()
 }

@@ -4,7 +4,8 @@ use bytes::Bytes;
 use futures::SinkExt;
 use tracing::{error, info};
 use crate::models::{InboundHandleEvent, RpcCodec, TcpWriter};
-use crate::models::response::{DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse, RegistryResponse, ServiceCheckResponse};
+use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse,
+                              RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
 
 /// 根据inbound handle 发送的消息进行响应
 pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
@@ -29,25 +30,23 @@ pub async fn outbound_handle(data: InboundHandleEvent, writer: &mut TcpWriter){
             response(writer, names_response.to_json()).await;
         }
         // service 状态检测
-        InboundHandleEvent::ServiceCheck { service_id } => {
+        InboundHandleEvent::ServiceCheckResp { service_id } => {
             info!("Listener ServiceCheck event");
             let check_response = ServiceCheckResponse::new(&service_id);
             response(writer, check_response.to_json()).await;
-        }
-        // 服务刷新(包括服务下线 和服务注册)
-        InboundHandleEvent::ServiceRefresh {
-            registry,
-            service_name,
-            service_list,
-        } => {
-            info!("Listener ServiceRefresh event");
-            let discovery_response = DiscoveryResponse::new(&service_name, service_list);
-            response(writer, discovery_response.to_json()).await;
         }
         // 服务下线
         InboundHandleEvent::ServiceDeregistryResp { success } => {
             let dereg_response = DeregistryResponse { success };
             response(writer, dereg_response.to_json()).await;
+        }
+        InboundHandleEvent::AddServiceResp { service } => {
+            let add_service_response = AddServiceResponse::new(service);
+            response(writer, add_service_response.to_json()).await;
+        }
+        InboundHandleEvent::RemoveServiceResp { service_id, service_name } => {
+            let remove_service_response = RemoveServiceResponse::new(&service_id, &service_name);
+            response(writer, remove_service_response.to_json()).await;
         }
     }
 }

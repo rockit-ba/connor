@@ -30,6 +30,11 @@ pub enum RpcKind {
     Deregistry,
     /// 服务检测
     ServiceCheck,
+    /// 通知客户端缓存添加某服务
+    AddService,
+    /// 通知客户端缓存删除某服务
+    RemoveService
+
 }
 /// 序列化时用到
 impl Display for RpcKind {
@@ -48,6 +53,8 @@ impl FromStr for RpcKind {
             "2" => Ok(RpcKind::DiscoveryNames),
             "3" => Ok(RpcKind::Deregistry),
             "4" => Ok(RpcKind::ServiceCheck),
+            "5" => Ok(RpcKind::AddService),
+            "6" => Ok(RpcKind::RemoveService),
             &_ => Err("RpcKind Parser Fail"),
         }
     }
@@ -56,30 +63,32 @@ impl FromStr for RpcKind {
 /// 入站处理器处理之后发送的响应客户端的事件
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleEvent {
-    // 服务注册的响应
+    /// 服务注册的响应
     ServiceRegistryResp {
         success: bool,
     },
-    // 服务下线的响应
+    /// 服务下线的响应
     ServiceDeregistryResp {
         success: bool,
     },
-    // 服务发现响应
+    /// 服务发现响应
     ServiceDiscoveryResp {
         service_name: String,
         services: Option<Vec<NewService>>,
     },
-    /// 服务刷新（Connor 主动向客户端推送）
-    ServiceRefresh {
-        // 是否是注册，TRUE 表示是服务注册事件， FALSE 表示是服务下线事件
-        registry: bool,
-        service_name: String,
-        service_list: Option<Vec<NewService>>,
-    },
     /// 获取所有的 service name list 响应
     ServiceNamesResp { service_names: Vec<String> },
     /// service 状态检测
-    ServiceCheck { service_id: String },
+    ServiceCheckResp { service_id: String },
+    /// 通知客户端缓存添加某服务
+    AddServiceResp {
+        service: NewService
+    },
+    /// 通知客户端缓存删除某服务
+    RemoveServiceResp {
+        service_id: String,
+        service_name: String
+    }
 }
 
 /// 请求/响应实体的公共方法
