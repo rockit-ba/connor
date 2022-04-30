@@ -81,11 +81,12 @@ impl RpcCodec for ServiceCheckResponse {
 /// 当前客户端添加服务响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct AddServiceResponse {
-    service: NewService
+    service_name: String,
+    service_list: Vec<NewService>,
 }
 impl AddServiceResponse {
-    pub fn new(service: NewService) -> Self {
-        Self {service}
+    pub fn new(service_name: &str,service_list: Vec<NewService>) -> Self {
+        Self { service_name: service_name.to_string(), service_list }
     }
 }
 impl RpcCodec for AddServiceResponse {

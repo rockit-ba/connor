@@ -37,6 +37,7 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: &mut TcpWri
         }
         // 服务下线
         InboundHandleSingleEvent::ServiceDeregistryResp { success } => {
+            info!("Listener ServiceDeregistry event");
             let dereg_response = DeregistryResponse { success };
             response(writer, dereg_response.to_json()).await;
         }
@@ -46,11 +47,14 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: &mut TcpWri
 
 pub async fn outbound_broad_handle(data: InboundHandleBroadcastEvent, writer: &mut TcpWriter){
     match data {
-        InboundHandleBroadcastEvent::AddServiceResp { service } => {
-            let add_service_response = AddServiceResponse::new(service);
+        InboundHandleBroadcastEvent::None => {}
+        InboundHandleBroadcastEvent::AddServiceResp { service_name, service_list } => {
+            info!("Listener AddService event");
+            let add_service_response = AddServiceResponse::new(&service_name,service_list);
             response(writer, add_service_response.to_json()).await;
         }
         InboundHandleBroadcastEvent::RemoveServiceResp { service_id, service_name } => {
+            info!("Listener RemoveService event");
             let remove_service_response = RemoveServiceResponse::new(&service_id, &service_name);
             response(writer, remove_service_response.to_json()).await;
         }

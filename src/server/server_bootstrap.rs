@@ -59,7 +59,7 @@ impl ConnorServer {
             let peer_addr = socket.peer_addr().unwrap().to_string();
             info!("connection come in：{}", &peer_addr);
             // client注册的服务的容器
-            let (s_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(8);
+            let (m_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(1);
             let arc_map = self.servers.clone();
             // channel
             let (mut writer, mut reader) =
@@ -72,16 +72,16 @@ impl ConnorServer {
                     if let Ok(data) = receiver.recv().await {
                         outbound_broad_handle(data,&mut writer).await;
                     }
-                    if let Ok(data) = s_receiver.try_recv() {
+                    if let Some(data) = s_receiver.recv().await{
                         outbound_handle(data,&mut writer).await;
-                    }
+                    };
                 }
             });
 
             // 用来发送响应客户端的消息
             let mut sender = tx.clone();
-            let mut s_sender = s_sender.clone();
             tokio::spawn(async move {
+                let m_sender = m_sender;
                 // 注意这里的Ok(Some(req)) 不能拆开写，这样会导致一直 ok()
                 while let Ok(Some(req)) = reader.try_next().await {
                     let string = String::from_utf8((&req).to_vec())
@@ -90,7 +90,7 @@ impl ConnorServer {
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
-                        inbound_handle(rpc_kind, json, &mut sender, &mut s_sender,arc_map.clone()).await;
+                        inbound_handle(rpc_kind, json, &mut sender, &m_sender,arc_map.clone()).await;
                     }
                 }
 

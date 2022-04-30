@@ -85,13 +85,16 @@ pub enum InboundHandleSingleEvent {
 pub enum InboundHandleBroadcastEvent {
     /// 通知客户端缓存添加某服务
     AddServiceResp {
-        service: NewService
+        service_name: String,
+        service_list: Vec<NewService>,
     },
     /// 通知客户端缓存删除某服务
     RemoveServiceResp {
         service_id: String,
         service_name: String
-    }
+    },
+    /// 为了不阻塞，无任何业务意义
+    None
 }
 
 

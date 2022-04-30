@@ -10,7 +10,7 @@ use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcKi
 use crate::server_bootstrap::ServersMap;
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Sender as SingleSender;
-use tracing::error;
+use tracing::{error};
 use crate::models::InboundHandleSingleEvent::{ServiceDeregistryResp};
 
 /// 根据解析后的请求类型 和 json 体进行后续处理
@@ -19,7 +19,7 @@ pub async fn inbound_handle(
     rpc_kind: RpcKind,
     json: &str,
     broad: &mut Sender<InboundHandleBroadcastEvent>,
-    sender: &mut SingleSender<InboundHandleSingleEvent>,
+    sender: &SingleSender<InboundHandleSingleEvent>,
     map: ServersMap,
 ) {
     match rpc_kind {
@@ -29,17 +29,19 @@ pub async fn inbound_handle(
             // 首先发布此次请求的响应事件
             response(sender, InboundHandleSingleEvent::ServiceRegistryResp {success: true}).await;
             // 然后发布更新客户端缓存信息的事件，由Connor 主动向 client 发送服务刷新请求
-            publisher(broad, InboundHandleBroadcastEvent::AddServiceResp { service: new_service.service });
+            publisher(broad, new_service);
         }
         // 服务发现：根据service-name 获取所有的service
         RpcKind::Discovery => {
             let handle_event = discovery::handle(json, map).await;
             response(sender, handle_event).await;
+            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         // 获取所有的service-names
         RpcKind::DiscoveryNames => {
             let handle_event = discovery_names::handle(json, map).await;
             response(sender, handle_event).await;
+            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         // 服务下线
         RpcKind::Deregistry => {
@@ -54,16 +56,18 @@ pub async fn inbound_handle(
         RpcKind::ServiceCheck => {
             let handle_event = service_check::handle(json, map).await;
             response(sender, handle_event).await;
+            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         RpcKind::AddService => {}
         RpcKind::RemoveService => {}
     }
 }
 // 发布事件消息
-async fn response(sender: &mut SingleSender<InboundHandleSingleEvent>, handle_event: InboundHandleSingleEvent) {
+async fn response(sender: &SingleSender<InboundHandleSingleEvent>, handle_event: InboundHandleSingleEvent) {
     if let Err(result) = sender.send(handle_event).await {
-        error!("Publisher Event Error [{:?}]", result);
+        error!("Response Event Error [{:?}]", result);
     }
+
 }
 // 发布事件消息
 fn publisher(sender: &mut Sender<InboundHandleBroadcastEvent>, handle_event: InboundHandleBroadcastEvent) {
