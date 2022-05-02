@@ -53,10 +53,7 @@ pub async fn inbound_handle(
             // 然后需要主动通知客户端更新缓存（删除这个服务）
             publisher(
                 broad,
-                InboundHandleBroadcastEvent::RemoveServiceResp {
-                    service_id: deregistry_request.service_id,
-                    service_name: deregistry_request.service_name,
-                },
+                deregistry_request,
             )
         }
         // 服务检测

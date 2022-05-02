@@ -101,14 +101,14 @@ impl RpcCodec for AddServiceResponse {
 /// 当前客户端删除服务响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct RemoveServiceResponse {
-    service_id: String,
     service_name: String,
+    service_list: Vec<NewService>,
 }
 impl RemoveServiceResponse {
-    pub fn new(service_id: &str, service_name: &str) -> Self {
+    pub fn new(service_name: &str, service_list: Vec<NewService>) -> Self {
         Self {
-            service_id: service_id.to_string(),
             service_name: service_name.to_string(),
+            service_list,
         }
     }
 }

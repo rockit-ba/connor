@@ -66,11 +66,11 @@ pub async fn outbound_broad_handle(
             response(&mut writer, add_service_response.to_json()).await;
         }
         InboundHandleBroadcastEvent::RemoveServiceResp {
-            service_id,
             service_name,
+            service_list
         } => {
             info!("Listener RemoveService event");
-            let remove_service_response = RemoveServiceResponse::new(&service_id, &service_name);
+            let remove_service_response = RemoveServiceResponse::new(&service_name, service_list);
             response(&mut writer, remove_service_response.to_json()).await;
         }
     }

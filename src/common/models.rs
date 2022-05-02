@@ -85,8 +85,8 @@ pub enum InboundHandleBroadcastEvent {
     },
     /// 通知客户端缓存删除某服务
     RemoveServiceResp {
-        service_id: String,
         service_name: String,
+        service_list: Vec<NewService>,
     },
 }
 

@@ -1,7 +1,6 @@
 //! connor server_bootstrap
 
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
-
 use crate::custom_error::Byte2JsonErr;
 use crate::server::outbound::outbound_broad_handle;
 use crate::server::{inbound_handle, outbound_handle};
@@ -53,12 +52,12 @@ impl ConnorServer {
         info!("Connor Server_Bootstrap Startup");
         let mut listener_stream = TcpListenerStream::new(listener);
 
-        let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(100);
+        let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(1024);
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();
             info!("connection come in：{}", &peer_addr);
             // client注册的服务的容器
-            let (m_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(100);
+            let (m_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(16);
             let arc_map = self.servers.clone();
             // channel
             let (writer, mut reader) = Framed::new(socket, LengthDelimitedCodec::new()).split();
