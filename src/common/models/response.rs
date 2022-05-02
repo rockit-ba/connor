@@ -1,11 +1,11 @@
 //! response 模型
 
 use crate::models::{NewService, RpcCodec, RpcKind};
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct RegistryResponse {
-    pub success: bool
+    pub success: bool,
 }
 impl RpcCodec for RegistryResponse {
     fn rpc_kind() -> RpcKind {
@@ -52,7 +52,7 @@ impl RpcCodec for DiscoveryServiceNamesResponse {
 /// 服务下线响应
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct DeregistryResponse {
-    pub success: bool
+    pub success: bool,
 }
 impl RpcCodec for DeregistryResponse {
     fn rpc_kind() -> RpcKind {
@@ -85,8 +85,11 @@ pub struct AddServiceResponse {
     service_list: Vec<NewService>,
 }
 impl AddServiceResponse {
-    pub fn new(service_name: &str,service_list: Vec<NewService>) -> Self {
-        Self { service_name: service_name.to_string(), service_list }
+    pub fn new(service_name: &str, service_list: Vec<NewService>) -> Self {
+        Self {
+            service_name: service_name.to_string(),
+            service_list,
+        }
     }
 }
 impl RpcCodec for AddServiceResponse {
@@ -99,11 +102,14 @@ impl RpcCodec for AddServiceResponse {
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct RemoveServiceResponse {
     service_id: String,
-    service_name: String
+    service_name: String,
 }
 impl RemoveServiceResponse {
     pub fn new(service_id: &str, service_name: &str) -> Self {
-        Self { service_id: service_id.to_string(), service_name: service_name.to_string() }
+        Self {
+            service_id: service_id.to_string(),
+            service_name: service_name.to_string(),
+        }
     }
 }
 impl RpcCodec for RemoveServiceResponse {

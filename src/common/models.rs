@@ -3,6 +3,7 @@
 pub mod request;
 pub mod response;
 
+use crate::custom_error::{Json2StructErr, Struct2JsonErr};
 use bytes::Bytes;
 use futures::stream::{SplitSink, SplitStream};
 use serde::{Deserialize, Serialize};
@@ -12,7 +13,6 @@ use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
-use crate::custom_error::{Json2StructErr, Struct2JsonErr};
 
 pub type TcpReader = SplitStream<Framed<TcpStream, LengthDelimitedCodec>>;
 pub type TcpWriter = SplitSink<Framed<TcpStream, LengthDelimitedCodec>, Bytes>;
@@ -33,8 +33,7 @@ pub enum RpcKind {
     /// 通知客户端缓存添加某服务
     AddService,
     /// 通知客户端缓存删除某服务
-    RemoveService
-
+    RemoveService,
 }
 /// 序列化时用到
 impl Display for RpcKind {
@@ -64,13 +63,9 @@ impl FromStr for RpcKind {
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleSingleEvent {
     /// 服务注册的响应
-    ServiceRegistryResp {
-        success: bool,
-    },
+    ServiceRegistryResp { success: bool },
     /// 服务下线的响应
-    ServiceDeregistryResp {
-        success: bool,
-    },
+    ServiceDeregistryResp { success: bool },
     /// 服务发现响应
     ServiceDiscoveryResp {
         service_name: String,
@@ -91,10 +86,9 @@ pub enum InboundHandleBroadcastEvent {
     /// 通知客户端缓存删除某服务
     RemoveServiceResp {
         service_id: String,
-        service_name: String
-    }
+        service_name: String,
+    },
 }
-
 
 /// 请求/响应实体的公共方法
 pub trait RpcCodec: Debug {
@@ -107,8 +101,7 @@ pub trait RpcCodec: Debug {
         Self: Sized + Deserialize<'a>,
     {
         Box::new(
-            serde_json::from_str::<Self>(json)
-                .unwrap_or_else(|_| panic!("{}", Json2StructErr)),
+            serde_json::from_str::<Self>(json).unwrap_or_else(|_| panic!("{}", Json2StructErr)),
         )
     }
 
@@ -117,8 +110,7 @@ pub trait RpcCodec: Debug {
     where
         Self: Serialize,
     {
-        let json = serde_json::to_string(self)
-            .unwrap_or_else(|_| panic!("{}", Struct2JsonErr));
+        let json = serde_json::to_string(self).unwrap_or_else(|_| panic!("{}", Struct2JsonErr));
 
         format!("{}{}", Self::rpc_kind(), json)
     }
@@ -134,4 +126,3 @@ pub struct NewService {
     // 元数据，可选
     pub meta: Option<HashMap<String, String>>,
 }
-

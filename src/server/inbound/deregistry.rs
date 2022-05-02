@@ -1,12 +1,12 @@
 //!  服务下线
 
-use std::ops::Deref;
-use crate::models::{RpcCodec};
-use crate::server_bootstrap::ServersMap;
-use tracing::info;
 use crate::models::request::DeregistryRequest;
+use crate::models::RpcCodec;
+use crate::server_bootstrap::ServersMap;
+use std::ops::Deref;
+use tracing::info;
 
-pub async fn handle(json: &str, map: ServersMap) -> DeregistryRequest{
+pub async fn handle(json: &str, map: ServersMap) -> DeregistryRequest {
     let deregistry_request = DeregistryRequest::from_json(json);
     info!("inbound data [ {:?} ]", &deregistry_request);
     {

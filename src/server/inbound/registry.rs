@@ -1,9 +1,9 @@
 //! 服务注册
 
+use crate::models::request::RegistryRequest;
 use crate::models::{InboundHandleBroadcastEvent, RpcCodec};
 use crate::server_bootstrap::ServersMap;
 use tracing::info;
-use crate::models::request::RegistryRequest;
 
 /// 请求处理
 ///
@@ -26,7 +26,6 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleBroadcastEvent 
     }
     InboundHandleBroadcastEvent::AddServiceResp {
         service_name: service.name.clone(),
-        service_list: map.read().get(&service.name).unwrap().clone()
+        service_list: map.read().get(&service.name).unwrap().clone(),
     }
-
 }

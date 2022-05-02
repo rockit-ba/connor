@@ -3,6 +3,7 @@
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 
 use crate::custom_error::Byte2JsonErr;
+use crate::server::outbound::outbound_broad_handle;
 use crate::server::{inbound_handle, outbound_handle};
 use anyhow::Result;
 use futures::{StreamExt, TryStreamExt};
@@ -16,7 +17,6 @@ use tokio::sync::{broadcast, mpsc, Mutex};
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{info, warn};
-use crate::server::outbound::outbound_broad_handle;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -55,22 +55,20 @@ impl ConnorServer {
 
         let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(100);
         while let Some(socket) = listener_stream.try_next().await? {
-
             let peer_addr = socket.peer_addr().unwrap().to_string();
             info!("connection come in：{}", &peer_addr);
             // client注册的服务的容器
             let (m_sender, mut s_receiver) = mpsc::channel::<InboundHandleSingleEvent>(100);
             let arc_map = self.servers.clone();
             // channel
-            let (writer, mut reader) =
-                Framed::new(socket, LengthDelimitedCodec::new()).split();
+            let (writer, mut reader) = Framed::new(socket, LengthDelimitedCodec::new()).split();
             let writer = Arc::new(Mutex::new(writer));
             // response client spawn
             // 用于监听处理响应客户端的请求
             let single_writer = writer.clone();
             let single_handle = tokio::spawn(async move {
                 while let Some(data) = s_receiver.recv().await {
-                    outbound_handle(data,single_writer.clone()).await;
+                    outbound_handle(data, single_writer.clone()).await;
                 }
             });
             let mut broad_receiver = broad_tx.subscribe();
@@ -91,7 +89,8 @@ impl ConnorServer {
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
-                        inbound_handle(rpc_kind, json, &broad_sender, &m_sender,arc_map.clone()).await;
+                        inbound_handle(rpc_kind, json, &broad_sender, &m_sender, arc_map.clone())
+                            .await;
                     }
                 }
 

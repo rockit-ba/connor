@@ -1,7 +1,7 @@
 //! request 模型
 
 use crate::models::{NewService, RpcCodec, RpcKind};
-use serde_derive::{Serialize, Deserialize};
+use serde_derive::{Deserialize, Serialize};
 
 /// 注册服务请求
 #[derive(Serialize, Deserialize, PartialEq, Debug, Clone)]
