@@ -18,7 +18,7 @@ use crate::models::InboundHandleSingleEvent::{ServiceDeregistryResp};
 pub async fn inbound_handle(
     rpc_kind: RpcKind,
     json: &str,
-    broad: &mut Sender<InboundHandleBroadcastEvent>,
+    broad: &Sender<InboundHandleBroadcastEvent>,
     sender: &SingleSender<InboundHandleSingleEvent>,
     map: ServersMap,
 ) {
@@ -35,13 +35,11 @@ pub async fn inbound_handle(
         RpcKind::Discovery => {
             let handle_event = discovery::handle(json, map).await;
             response(sender, handle_event).await;
-            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         // 获取所有的service-names
         RpcKind::DiscoveryNames => {
             let handle_event = discovery_names::handle(json, map).await;
             response(sender, handle_event).await;
-            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         // 服务下线
         RpcKind::Deregistry => {
@@ -56,7 +54,6 @@ pub async fn inbound_handle(
         RpcKind::ServiceCheck => {
             let handle_event = service_check::handle(json, map).await;
             response(sender, handle_event).await;
-            publisher(broad,InboundHandleBroadcastEvent::None);
         }
         RpcKind::AddService => {}
         RpcKind::RemoveService => {}
@@ -70,7 +67,7 @@ async fn response(sender: &SingleSender<InboundHandleSingleEvent>, handle_event:
 
 }
 // 发布事件消息
-fn publisher(sender: &mut Sender<InboundHandleBroadcastEvent>, handle_event: InboundHandleBroadcastEvent) {
+fn publisher(sender: &Sender<InboundHandleBroadcastEvent>, handle_event: InboundHandleBroadcastEvent) {
     if let Err(result) = sender.send(handle_event) {
         error!("Publisher Event Error [{:?}]", result);
     }

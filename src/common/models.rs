@@ -92,9 +92,7 @@ pub enum InboundHandleBroadcastEvent {
     RemoveServiceResp {
         service_id: String,
         service_name: String
-    },
-    /// 为了不阻塞，无任何业务意义
-    None
+    }
 }
 
 

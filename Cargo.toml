@@ -6,7 +6,7 @@ description = "服务发现和注册中心"
 
 [dependencies]
 futures = "0.3.21"
-tokio = { version = "1.17.0", features = ["macros", "rt", "rt-multi-thread", "net", "io-util", "time", "sync"] }
+tokio = { version = "1.18.0", features = ["macros", "rt", "rt-multi-thread", "net", "io-util", "time", "sync"] }
 tokio-stream = { version = "0.1.8", features = ["net"]}
 tokio-util = { version = "0.7.1", features = ["codec"] }
 
