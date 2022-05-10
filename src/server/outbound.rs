@@ -54,7 +54,7 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: Arc<Mutex<T
     }
 }
 
-pub async fn outbound_broad_handle(
+pub async fn outbound_handle_broad(
     data: InboundHandleBroadcastEvent,
     writer: Arc<Mutex<TcpWriter>>,
 ) {

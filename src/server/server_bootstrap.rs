@@ -2,7 +2,7 @@
 
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 use crate::custom_error::Byte2JsonErr;
-use crate::server::outbound::outbound_broad_handle;
+use crate::server::outbound::outbound_handle_broad;
 use crate::server::{inbound_handle, outbound_handle};
 use anyhow::Result;
 use futures::{StreamExt, TryStreamExt};
@@ -140,7 +140,7 @@ impl ConnorServer {
             let broad_writer = writer.clone();
             let broad_handle = tokio::spawn(async move {
                 while let Ok(data) = broad_receiver.recv().await {
-                    outbound_broad_handle(data, broad_writer.clone()).await;
+                    outbound_handle_broad(data, broad_writer.clone()).await;
                 }
             });
 
