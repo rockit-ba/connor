@@ -66,10 +66,11 @@ pub async fn inbound_handle(
         // 心跳检测请求
         RpcKind::Heartbeat => {
             heartbeat::handle(json, services_heartbeat_map).await;
+            response(sender, InboundHandleSingleEvent::HeartbeatResp {success: true}).await;
         }
+        RpcKind::HeartbeatTimeout => {}
         RpcKind::AddService => {}
         RpcKind::RemoveService => {}
-
     }
 }
 // 发布事件消息

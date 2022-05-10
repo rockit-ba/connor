@@ -59,38 +59,47 @@ impl ConnorServer {
         let services_heartbeat_map = self.servers_heartbeat.clone();
         let services_map = self.servers.clone();
         tokio::spawn(async move {
-            // 每90 秒进行检测
-            sleep(tokio::time::Duration::from_secs(90)).await;
-            // 超时 ID 集合，这些 instance_id都要从servers_map中移除
-            let timeout_instance_ids;
-            {
-                let read_guard = services_heartbeat_map.read();
-                // 获取超时的instance_id(当前时间差超过 90秒即为过期)
-                timeout_instance_ids = read_guard.iter()
-                    .filter(|(_, system_time)| {
-                        if let Ok(time) = system_time.elapsed() {
-                            return time.as_secs() > 90;
-                        }
-                        false
-                    }).map(|(id,_)| { id.clone() })
-                    .collect::<Vec<String>>();
-            }
-            {
-                let mut write_guard = services_map.write();
-                // 移除超时的instance_id
-                write_guard.iter_mut().for_each(|(_, services)| {
-                    services.retain(|service| {
-                        !timeout_instance_ids.contains(&service.id)
+            loop {
+                // 每90 秒进行检测
+                sleep(tokio::time::Duration::from_secs(90)).await;
+                // 超时 ID 集合，这些 instance_id都要从servers_map中移除
+                let timeout_instance_ids;
+                {
+                    let read_guard = services_heartbeat_map.read();
+                    // 获取超时的instance_id(当前时间差超过 90秒即为过期)
+                    timeout_instance_ids = read_guard.iter()
+                        .filter(|(_, system_time)| {
+                            if let Ok(time) = system_time.elapsed() {
+                                return time.as_secs() > 90;
+                            }
+                            false
+                        }).map(|(id,_)| { id.clone() })
+                        .collect::<Vec<String>>();
+                }
+                if timeout_instance_ids.is_empty() {
+                    info!("all instance are health");
+                    return;
+                }
+                warn!("that`s timeout instance: {:?}", timeout_instance_ids);
+
+                {
+                    let mut write_guard = services_map.write();
+                    // 移除超时的instance_id
+                    write_guard.iter_mut().for_each(|(_, services)| {
+                        services.retain(|service| {
+                            !timeout_instance_ids.contains(&service.id)
+                        });
                     });
-                });
-            }
-            // 将timeout_instance_ids进行广播，客户端需要移除
-            if let Err(err) = heartbeat_publisher.send(
-                InboundHandleBroadcastEvent::HeartbeatTimeoutResp { service_ids: timeout_instance_ids })
-            {
-                error!("heartbeat_publisher send error: {}", err);
+                }
+                // 将timeout_instance_ids进行广播，客户端需要移除
+                if let Err(err) = heartbeat_publisher.send(
+                    InboundHandleBroadcastEvent::HeartbeatTimeoutResp { service_ids: timeout_instance_ids })
+                {
+                    error!("heartbeat_publisher send error: {}", err);
+                }
             }
         });
+
     }
 
     // #[instrument]

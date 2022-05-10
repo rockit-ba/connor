@@ -1,6 +1,6 @@
 //! 消息出站模块
 
-use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse, HeartbeatTimeoutResponse, RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
+use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse, HeartbeatResponse, HeartbeatTimeoutResponse, RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcCodec, TcpWriter};
 use bytes::Bytes;
 use futures::SinkExt;
@@ -45,7 +45,12 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: Arc<Mutex<T
             let dereg_response = DeregistryResponse { success };
             response(&mut writer, dereg_response.to_json()).await;
         }
-        InboundHandleSingleEvent::HeartbeatResp { service_id: _ } => {}
+        // 服务心跳响应（对client 每次发送心跳请求的响应）
+        InboundHandleSingleEvent::HeartbeatResp { success } => {
+            info!("Listener Heartbeat event");
+            let heartbeat_response = HeartbeatResponse { success };
+            response(&mut writer, heartbeat_response.to_json()).await;
+        }
     }
 }
 

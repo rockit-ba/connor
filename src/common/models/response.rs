@@ -119,6 +119,16 @@ impl RpcCodec for RemoveServiceResponse {
 }
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct HeartbeatResponse {
+    pub success: bool,
+}
+impl RpcCodec for HeartbeatResponse {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Heartbeat
+    }
+}
+
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct HeartbeatTimeoutResponse {
     pub service_ids: Vec<String>,
 }
@@ -129,6 +139,6 @@ impl HeartbeatTimeoutResponse {
 }
 impl RpcCodec for HeartbeatTimeoutResponse {
     fn rpc_kind() -> RpcKind {
-        RpcKind::Heartbeat
+        RpcKind::HeartbeatTimeout
     }
 }

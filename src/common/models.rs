@@ -36,6 +36,8 @@ pub enum RpcKind {
     RemoveService,
     /// 心跳检测
     Heartbeat,
+    /// 心跳超时检测响应
+    HeartbeatTimeout,
 }
 /// 序列化时用到
 impl Display for RpcKind {
@@ -57,6 +59,7 @@ impl FromStr for RpcKind {
             "5" => Ok(RpcKind::AddService),
             "6" => Ok(RpcKind::RemoveService),
             "7" => Ok(RpcKind::Heartbeat),
+            "8" => Ok(RpcKind::HeartbeatTimeout),
             &_ => Err("RpcKind Parser Fail"),
         }
     }
@@ -79,7 +82,7 @@ pub enum InboundHandleSingleEvent {
     /// service 状态检测
     ServiceCheckResp { service_id: String },
     /// 心跳检测
-    HeartbeatResp {service_id: String},
+    HeartbeatResp {success: bool},
 }
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleBroadcastEvent {

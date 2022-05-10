@@ -2,11 +2,14 @@
 
 use std::time::SystemTime;
 use tracing::info;
-use crate::models::{InboundHandleSingleEvent, RpcCodec};
+use crate::models::{ RpcCodec};
 use crate::models::request::HeartbeatRequest;
 use crate::server_bootstrap::{ServersHeartbeatMap};
 
-pub async fn handle(json: &str,services_heartbeat_map: ServersHeartbeatMap) -> InboundHandleSingleEvent {
+/// 只做更新 ServersHeartbeatMap 数据
+///
+/// 无返回值
+pub async fn handle(json: &str,services_heartbeat_map: ServersHeartbeatMap) {
     let heartbeat_req = HeartbeatRequest::from_json(json);
     let service_id = &heartbeat_req.service_id;
     info!("inbound data [ {:?} ]", &heartbeat_req);
@@ -22,9 +25,9 @@ pub async fn handle(json: &str,services_heartbeat_map: ServersHeartbeatMap) -> I
                 *time = SystemTime::now();
             }
         }
+        info!("concurrent services_heartbeat_map [ {:?} ]", write_guard.keys());
     }
 
-    InboundHandleSingleEvent::HeartbeatResp { service_id: service_id.clone() }
 }
 
 #[cfg(test)]
