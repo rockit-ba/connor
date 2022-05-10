@@ -14,6 +14,7 @@ use std::sync::Arc;
 use std::time::{SystemTime};
 use tokio::net::TcpListener;
 use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::sync::broadcast::Sender;
 use tokio::time::{sleep};
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
@@ -53,18 +54,10 @@ impl ConnorServer {
         Self::default()
     }
 
-    // #[instrument]
-    pub async fn start(&mut self) -> Result<()> {
-        let listener = TcpListener::bind(self.addr.as_str()).await?;
-        info!("Connor Server_Bootstrap Startup");
-        let mut listener_stream = TcpListenerStream::new(listener);
-
-        let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(1024);
-
+    /// 定时检测心跳数据
+    fn heartbeat_task( &self, heartbeat_publisher: Sender<InboundHandleBroadcastEvent>) {
         let services_heartbeat_map = self.servers_heartbeat.clone();
         let services_map = self.servers.clone();
-        let heartbeat_publisher = broad_tx.clone();
-        // 定时检测心跳数据
         tokio::spawn(async move {
             // 每90 秒进行检测
             sleep(tokio::time::Duration::from_secs(90)).await;
@@ -85,16 +78,11 @@ impl ConnorServer {
             {
                 let mut write_guard = services_map.write();
                 // 移除超时的instance_id
-                let health_services_map = write_guard.iter().map(|(service_name, services)| {
-                    let health_services = services.iter().filter(|service| {
+                write_guard.iter_mut().for_each(|(_, services)| {
+                    services.retain(|service| {
                         !timeout_instance_ids.contains(&service.id)
-                    }).map(|service| {
-                        service.clone()
-                    }).collect();
-                    (service_name.to_string(), health_services)
-                }).collect::<HashMap<String, Vec<NewService>>>();
-
-                *write_guard = health_services_map;
+                    });
+                });
             }
             // 将timeout_instance_ids进行广播，客户端需要移除
             if let Err(err) = heartbeat_publisher.send(
@@ -103,6 +91,18 @@ impl ConnorServer {
                 error!("heartbeat_publisher send error: {}", err);
             }
         });
+    }
+
+    // #[instrument]
+    pub async fn start(&mut self) -> Result<()> {
+        let listener = TcpListener::bind(self.addr.as_str()).await?;
+        info!("Connor Server_Bootstrap Startup");
+        let mut listener_stream = TcpListenerStream::new(listener);
+
+        let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(1024);
+
+        self.heartbeat_task(broad_tx.clone());
+        info!("heartbeat_task start");
 
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();
@@ -171,8 +171,14 @@ mod test {
 
     #[test]
     fn test() {
-        let mut map: HashMap<i32, i32> = (0..8).map(|x| (x, x*10)).collect();
-        map.retain(|&k, _| k % 2 == 0);
+        let mut map = (0..3).map(|x| {
+            let x1 = (0..3).map(|y| { y.to_string() }).collect::<Vec<String>>();
+            (x, x1)
+        }).collect::<HashMap<i32,Vec<String>>>();
+        println!("{:?}", map);
+        map.iter_mut().for_each(|(_, v)| {
+            v.retain(|x| { !x.eq("2") })
+        });
         println!("{:?}", map);
     }
 }
