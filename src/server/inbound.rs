@@ -5,10 +5,11 @@ mod discovery;
 mod discovery_names;
 mod registry;
 mod service_check;
+mod heartbeat;
 
 use crate::models::InboundHandleSingleEvent::ServiceDeregistryResp;
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcKind};
-use crate::server_bootstrap::ServersMap;
+use crate::server_bootstrap::{ServersHeartbeatMap, ServersMap};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Sender as SingleSender;
 use tracing::error;
@@ -20,12 +21,13 @@ pub async fn inbound_handle(
     json: &str,
     broad: &Sender<InboundHandleBroadcastEvent>,
     sender: &SingleSender<InboundHandleSingleEvent>,
-    map: ServersMap,
+    services_map: ServersMap,
+    services_heartbeat_map: ServersHeartbeatMap,
 ) {
     match rpc_kind {
         // 服务注册
         RpcKind::Registry => {
-            let new_service = registry::handle(json, map).await;
+            let new_service = registry::handle(json, services_map).await;
             // 首先发布此次请求的响应事件
             response(
                 sender,
@@ -37,17 +39,17 @@ pub async fn inbound_handle(
         }
         // 服务发现：根据service-name 获取所有的service
         RpcKind::Discovery => {
-            let handle_event = discovery::handle(json, map).await;
+            let handle_event = discovery::handle(json, services_map).await;
             response(sender, handle_event).await;
         }
         // 获取所有的service-names
         RpcKind::DiscoveryNames => {
-            let handle_event = discovery_names::handle(json, map).await;
+            let handle_event = discovery_names::handle(json, services_map).await;
             response(sender, handle_event).await;
         }
         // 服务下线
         RpcKind::Deregistry => {
-            let deregistry_request = deregistry::handle(json, map).await;
+            let deregistry_request = deregistry::handle(json, services_map).await;
             // 同样的这里首先也需要发送响应此次客户端的事件
             response(sender, ServiceDeregistryResp { success: true }).await;
             // 然后需要主动通知客户端更新缓存（删除这个服务）
@@ -58,11 +60,16 @@ pub async fn inbound_handle(
         }
         // 服务检测
         RpcKind::ServiceCheck => {
-            let handle_event = service_check::handle(json, map).await;
+            let handle_event = service_check::handle(json, services_map).await;
             response(sender, handle_event).await;
+        }
+        // 心跳检测请求
+        RpcKind::Heartbeat => {
+            heartbeat::handle(json, services_heartbeat_map).await;
         }
         RpcKind::AddService => {}
         RpcKind::RemoveService => {}
+
     }
 }
 // 发布事件消息

@@ -1,9 +1,6 @@
 //! 消息出站模块
 
-use crate::models::response::{
-    AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse,
-    RegistryResponse, RemoveServiceResponse, ServiceCheckResponse,
-};
+use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse, HeartbeatTimeoutResponse, RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcCodec, TcpWriter};
 use bytes::Bytes;
 use futures::SinkExt;
@@ -48,6 +45,7 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: Arc<Mutex<T
             let dereg_response = DeregistryResponse { success };
             response(&mut writer, dereg_response.to_json()).await;
         }
+        InboundHandleSingleEvent::HeartbeatResp { service_id: _ } => {}
     }
 }
 
@@ -72,6 +70,11 @@ pub async fn outbound_broad_handle(
             info!("Listener RemoveService event");
             let remove_service_response = RemoveServiceResponse::new(&service_name, service_list);
             response(&mut writer, remove_service_response.to_json()).await;
+        }
+        InboundHandleBroadcastEvent::HeartbeatTimeoutResp { service_ids } => {
+            info!("Listener HeartbeatTimeout event");
+            let heartbeat_timeout_response = HeartbeatTimeoutResponse::new(service_ids);
+            response(&mut writer, heartbeat_timeout_response.to_json()).await;
         }
     }
 }

@@ -57,3 +57,14 @@ impl RpcCodec for ServiceCheckRequest {
         RpcKind::ServiceCheck
     }
 }
+
+/// client 的心跳请求
+#[derive(Serialize, Deserialize, PartialEq, Debug)]
+pub struct HeartbeatRequest {
+    pub service_id: String,
+}
+impl RpcCodec for HeartbeatRequest {
+    fn rpc_kind() -> RpcKind {
+        RpcKind::Heartbeat
+    }
+}
