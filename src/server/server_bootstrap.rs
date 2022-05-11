@@ -20,6 +20,7 @@ use tokio::time::sleep;
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info, warn};
+use crate::config::SERVER_CONFIG;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -44,7 +45,7 @@ impl Debug for ConnorServer {
 impl Default for ConnorServer {
     fn default() -> Self {
         Self {
-            addr: "127.0.0.1:8080".to_string(),
+            addr: SERVER_CONFIG.server_address.clone(),
             servers: ServersMap::new(RwLock::new(HashMap::<String, Vec<NewService>>::new())),
             servers_heartbeat: ServersHeartbeatMap::new(RwLock::new(
                 HashMap::<String, SystemTime>::new(),
@@ -115,7 +116,7 @@ impl ConnorServer {
         let (broad_tx, _) = broadcast::channel::<InboundHandleBroadcastEvent>(1024);
 
         self.heartbeat_task(broad_tx.clone());
-        info!("heartbeat_task start");
+        info!("heartbeat_task start with [{}]", self.addr.as_str());
 
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();

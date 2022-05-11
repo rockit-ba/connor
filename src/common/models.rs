@@ -7,7 +7,6 @@ use crate::custom_error::{Json2StructErr, Struct2JsonErr};
 use bytes::Bytes;
 use futures::stream::{SplitSink, SplitStream};
 use serde::{Deserialize, Serialize};
-use serde_derive::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fmt::{Debug, Display, Formatter};
 use std::str::FromStr;
