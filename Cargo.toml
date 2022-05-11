@@ -2,7 +2,8 @@
 name = "connor"
 version = "0.1.0"
 edition = "2021"
-description = "服务发现和注册中心"
+description = "服务发现和注册中心（康纳）"
+authors = ["潘吉祥"]
 
 [dependencies]
 futures = "0.3.21"
