@@ -3,7 +3,7 @@
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 use crate::custom_error::Byte2JsonErr;
 use crate::server::outbound::outbound_handle_broad;
-use crate::server::{inbound_handle, outbound_handle};
+use crate::server::{inbound_handle, outbound_handle_resp};
 use anyhow::Result;
 use futures::{StreamExt, TryStreamExt};
 use parking_lot::RwLock;
@@ -19,6 +19,7 @@ use tokio::time::{sleep};
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info, warn};
+use crate::server::inbound::InboundParams;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -131,7 +132,7 @@ impl ConnorServer {
             let single_writer = writer.clone();
             let single_handle = tokio::spawn(async move {
                 while let Some(data) = s_receiver.recv().await {
-                    outbound_handle(data, single_writer.clone()).await;
+                    outbound_handle_resp(data, single_writer.clone()).await;
                 }
             });
 
@@ -155,12 +156,13 @@ impl ConnorServer {
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
-                        inbound_handle(rpc_kind, json,
-                                       &broad_sender,
-                                       &m_sender,
-                                       services_map.clone(),
-                                       services_heartbeat_map.clone()
-                        ).await;
+                        let inbound_params = InboundParams::new(rpc_kind,
+                                                                json.to_string(),
+                                                                broad_sender.clone(),
+                                                                m_sender.clone(),
+                                                                services_map.clone(),
+                                                                services_heartbeat_map.clone());
+                        inbound_handle(inbound_params).await;
                     }
                 }
 

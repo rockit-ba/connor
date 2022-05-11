@@ -9,7 +9,7 @@ use tokio::sync::Mutex;
 use tracing::{error, info};
 
 /// 根据inbound handle 发送的消息进行响应
-pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: Arc<Mutex<TcpWriter>>) {
+pub async fn outbound_handle_resp(data: InboundHandleSingleEvent, writer: Arc<Mutex<TcpWriter>>) {
     let mut writer = writer.lock().await;
     match data {
         // 服务注册
@@ -54,6 +54,7 @@ pub async fn outbound_handle(data: InboundHandleSingleEvent, writer: Arc<Mutex<T
     }
 }
 
+/// 根据inbound handle 发送的消息进行广播响应
 pub async fn outbound_handle_broad(
     data: InboundHandleBroadcastEvent,
     writer: Arc<Mutex<TcpWriter>>,
@@ -84,12 +85,12 @@ pub async fn outbound_handle_broad(
     }
 }
 
-/// 响应客户端
+/// 响应客户端content
 async fn response(writer: &mut TcpWriter, content: String) {
     if let Err(err) = writer
         .send(Bytes::copy_from_slice(content.as_bytes()))
         .await
     {
-        error!("{:?}", err);
+        error!("response error {:?}", err);
     }
 }
