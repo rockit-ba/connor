@@ -78,7 +78,7 @@ impl ConnorServer {
                 }
                 if timeout_instance_ids.is_empty() {
                     info!("all instance are health");
-                    return;
+                    continue;
                 }
                 warn!("that`s timeout instance: {:?}", timeout_instance_ids);
 

@@ -130,11 +130,11 @@ impl RpcCodec for HeartbeatResponse {
 
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub struct HeartbeatTimeoutResponse {
-    pub service_ids: Vec<String>,
+    pub timeout_service_ids: Vec<String>,
 }
 impl HeartbeatTimeoutResponse {
     pub fn new(service_ids: Vec<String>) -> Self {
-        Self { service_ids }
+        Self { timeout_service_ids: service_ids }
     }
 }
 impl RpcCodec for HeartbeatTimeoutResponse {
