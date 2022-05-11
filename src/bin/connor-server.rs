@@ -7,7 +7,9 @@ use tracing_subscriber::fmt::time::LocalTime;
 
 #[tokio::main]
 async fn main() {
-    let timer = LocalTime::new(format_description!("[year]-[month]-[day] [hour]-[minute]-[second]"));
+    let timer = LocalTime::new(format_description!(
+        "[year]-[month]-[day] [hour]-[minute]-[second]"
+    ));
     tracing_subscriber::fmt()
         .with_timer(timer)
         .with_line_number(true)

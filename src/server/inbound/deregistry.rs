@@ -24,9 +24,11 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleBroadcastEvent 
         InboundHandleBroadcastEvent::RemoveServiceResp {
             service_name: service_name.clone(),
             service_list: match map.get(service_name) {
-                None => {vec![]}
-                Some(list) => {list.clone()}
-            }
+                None => {
+                    vec![]
+                }
+                Some(list) => list.clone(),
+            },
         }
     }
 }

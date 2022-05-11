@@ -134,7 +134,9 @@ pub struct HeartbeatTimeoutResponse {
 }
 impl HeartbeatTimeoutResponse {
     pub fn new(service_ids: Vec<String>) -> Self {
-        Self { timeout_service_ids: service_ids }
+        Self {
+            timeout_service_ids: service_ids,
+        }
     }
 }
 impl RpcCodec for HeartbeatTimeoutResponse {

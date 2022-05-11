@@ -82,7 +82,7 @@ pub enum InboundHandleSingleEvent {
     /// service 状态检测
     ServiceCheckResp { service_id: String },
     /// 心跳检测
-    HeartbeatResp {success: bool},
+    HeartbeatResp { success: bool },
 }
 #[derive(PartialEq, Debug, Clone)]
 pub enum InboundHandleBroadcastEvent {
@@ -97,7 +97,7 @@ pub enum InboundHandleBroadcastEvent {
         service_list: Vec<NewService>,
     },
     /// 心跳检测响应事件
-    HeartbeatTimeoutResp {service_ids: Vec<String>},
+    HeartbeatTimeoutResp { service_ids: Vec<String> },
 }
 
 /// 请求/响应实体的公共方法

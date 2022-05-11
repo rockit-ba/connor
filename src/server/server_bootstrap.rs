@@ -1,7 +1,8 @@
 //! connor server_bootstrap
 
-use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 use crate::custom_error::Byte2JsonErr;
+use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
+use crate::server::inbound::InboundParams;
 use crate::server::outbound::outbound_handle_broad;
 use crate::server::{inbound_handle, outbound_handle_resp};
 use anyhow::Result;
@@ -11,15 +12,14 @@ use std::collections::HashMap;
 use std::fmt::{Debug, Formatter};
 use std::str::FromStr;
 use std::sync::Arc;
-use std::time::{SystemTime};
+use std::time::SystemTime;
 use tokio::net::TcpListener;
-use tokio::sync::{broadcast, mpsc, Mutex};
 use tokio::sync::broadcast::Sender;
-use tokio::time::{sleep};
+use tokio::sync::{broadcast, mpsc, Mutex};
+use tokio::time::sleep;
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info, warn};
-use crate::server::inbound::InboundParams;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -46,7 +46,9 @@ impl Default for ConnorServer {
         Self {
             addr: "127.0.0.1:8080".to_string(),
             servers: ServersMap::new(RwLock::new(HashMap::<String, Vec<NewService>>::new())),
-            servers_heartbeat: ServersHeartbeatMap::new(RwLock::new(HashMap::<String, SystemTime>::new())),
+            servers_heartbeat: ServersHeartbeatMap::new(RwLock::new(
+                HashMap::<String, SystemTime>::new(),
+            )),
         }
     }
 }
@@ -56,7 +58,7 @@ impl ConnorServer {
     }
 
     /// 定时检测心跳数据
-    fn heartbeat_task( &self, heartbeat_publisher: Sender<InboundHandleBroadcastEvent>) {
+    fn heartbeat_task(&self, heartbeat_publisher: Sender<InboundHandleBroadcastEvent>) {
         let services_heartbeat_map = self.servers_heartbeat.clone();
         let services_map = self.servers.clone();
         tokio::spawn(async move {
@@ -68,13 +70,15 @@ impl ConnorServer {
                 {
                     let read_guard = services_heartbeat_map.read();
                     // 获取超时的instance_id(当前时间差超过 90秒即为过期)
-                    timeout_instance_ids = read_guard.iter()
+                    timeout_instance_ids = read_guard
+                        .iter()
                         .filter(|(_, system_time)| {
                             if let Ok(time) = system_time.elapsed() {
                                 return time.as_secs() > 90;
                             }
                             false
-                        }).map(|(id,_)| { id.clone() })
+                        })
+                        .map(|(id, _)| id.clone())
                         .collect::<Vec<String>>();
                 }
                 if timeout_instance_ids.is_empty() {
@@ -87,20 +91,19 @@ impl ConnorServer {
                     let mut write_guard = services_map.write();
                     // 移除超时的instance_id
                     write_guard.iter_mut().for_each(|(_, services)| {
-                        services.retain(|service| {
-                            !timeout_instance_ids.contains(&service.id)
-                        });
+                        services.retain(|service| !timeout_instance_ids.contains(&service.id));
                     });
                 }
                 // 将timeout_instance_ids进行广播，客户端需要移除
-                if let Err(err) = heartbeat_publisher.send(
-                    InboundHandleBroadcastEvent::HeartbeatTimeoutResp { service_ids: timeout_instance_ids })
+                if let Err(err) =
+                    heartbeat_publisher.send(InboundHandleBroadcastEvent::HeartbeatTimeoutResp {
+                        service_ids: timeout_instance_ids,
+                    })
                 {
                     error!("heartbeat_publisher send error: {}", err);
                 }
             }
         });
-
     }
 
     // #[instrument]
@@ -156,13 +159,18 @@ impl ConnorServer {
 
                     if let Ok(rpc_kind) = RpcKind::from_str(&string[0..1]) {
                         let json = &string[1..];
-                        let inbound_params = InboundParams::new(rpc_kind,
-                                                                json.to_string(),
-                                                                broad_sender.clone(),
-                                                                m_sender.clone());
-                        inbound_handle(inbound_params,
-                                       services_map.clone(),
-                                       services_heartbeat_map.clone()).await;
+                        let inbound_params = InboundParams::new(
+                            rpc_kind,
+                            json.to_string(),
+                            broad_sender.clone(),
+                            m_sender.clone(),
+                        );
+                        inbound_handle(
+                            inbound_params,
+                            services_map.clone(),
+                            services_heartbeat_map.clone(),
+                        )
+                        .await;
                     }
                 }
 
@@ -182,14 +190,14 @@ mod test {
 
     #[test]
     fn test() {
-        let mut map = (0..3).map(|x| {
-            let x1 = (0..3).map(|y| { y.to_string() }).collect::<Vec<String>>();
-            (x, x1)
-        }).collect::<HashMap<i32,Vec<String>>>();
+        let mut map = (0..3)
+            .map(|x| {
+                let x1 = (0..3).map(|y| y.to_string()).collect::<Vec<String>>();
+                (x, x1)
+            })
+            .collect::<HashMap<i32, Vec<String>>>();
         println!("{:?}", map);
-        map.iter_mut().for_each(|(_, v)| {
-            v.retain(|x| { !x.eq("2") })
-        });
+        map.iter_mut().for_each(|(_, v)| v.retain(|x| !x.eq("2")));
         println!("{:?}", map);
     }
 }

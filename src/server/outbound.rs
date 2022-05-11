@@ -1,6 +1,10 @@
 //! 消息出站模块
 
-use crate::models::response::{AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse, HeartbeatResponse, HeartbeatTimeoutResponse, RegistryResponse, RemoveServiceResponse, ServiceCheckResponse};
+use crate::models::response::{
+    AddServiceResponse, DeregistryResponse, DiscoveryResponse, DiscoveryServiceNamesResponse,
+    HeartbeatResponse, HeartbeatTimeoutResponse, RegistryResponse, RemoveServiceResponse,
+    ServiceCheckResponse,
+};
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcCodec, TcpWriter};
 use bytes::Bytes;
 use futures::SinkExt;
@@ -71,7 +75,7 @@ pub async fn outbound_handle_broad(
         }
         InboundHandleBroadcastEvent::RemoveServiceResp {
             service_name,
-            service_list
+            service_list,
         } => {
             info!("Listener RemoveService event");
             let remove_service_response = RemoveServiceResponse::new(&service_name, service_list);

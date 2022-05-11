@@ -3,9 +3,9 @@
 mod deregistry;
 mod discovery;
 mod discovery_names;
+mod heartbeat;
 mod registry;
 mod service_check;
-mod heartbeat;
 
 use crate::models::InboundHandleSingleEvent::ServiceDeregistryResp;
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, RpcKind};
@@ -49,19 +49,21 @@ impl InboundParams {
     }
 }
 
-
 /// 根据解析后的请求类型 和 json 体进行后续处理
 // #[instrument]
-pub async fn inbound_handle(params: InboundParams,
-                            services_map: ServersMap,
-                            services_heartbeat_map: ServersHeartbeatMap,)
-{
+pub async fn inbound_handle(
+    params: InboundParams,
+    services_map: ServersMap,
+    services_heartbeat_map: ServersHeartbeatMap,
+) {
     match params.rpc_kind {
         // 服务注册
         RpcKind::Registry => {
             let new_service = registry::handle(&params.json, services_map).await;
             // 首先发布此次请求的响应事件
-            params.unicast(InboundHandleSingleEvent::ServiceRegistryResp { success: true }).await;
+            params
+                .unicast(InboundHandleSingleEvent::ServiceRegistryResp { success: true })
+                .await;
             // 然后发布更新客户端缓存信息的事件，由Connor 主动向 client 发送服务刷新请求
             params.publisher(new_service);
         }
@@ -79,7 +81,9 @@ pub async fn inbound_handle(params: InboundParams,
         RpcKind::Deregistry => {
             let deregistry_request = deregistry::handle(&params.json, services_map).await;
             // 同样的这里首先也需要发送响应此次客户端的事件
-            params.unicast(ServiceDeregistryResp { success: true }).await;
+            params
+                .unicast(ServiceDeregistryResp { success: true })
+                .await;
             // 然后需要主动通知客户端更新缓存（删除这个服务）
             params.publisher(deregistry_request);
         }
@@ -91,7 +95,9 @@ pub async fn inbound_handle(params: InboundParams,
         // 心跳检测请求
         RpcKind::Heartbeat => {
             heartbeat::handle(&params.json, services_heartbeat_map).await;
-            params.unicast(InboundHandleSingleEvent::HeartbeatResp {success: true}).await;
+            params
+                .unicast(InboundHandleSingleEvent::HeartbeatResp { success: true })
+                .await;
         }
         // 其他情况,都是server端主动推送的请求
         RpcKind::HeartbeatTimeout => {}
