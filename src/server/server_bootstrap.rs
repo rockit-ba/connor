@@ -159,10 +159,10 @@ impl ConnorServer {
                         let inbound_params = InboundParams::new(rpc_kind,
                                                                 json.to_string(),
                                                                 broad_sender.clone(),
-                                                                m_sender.clone(),
-                                                                services_map.clone(),
-                                                                services_heartbeat_map.clone());
-                        inbound_handle(inbound_params).await;
+                                                                m_sender.clone());
+                        inbound_handle(inbound_params,
+                                       services_map.clone(),
+                                       services_heartbeat_map.clone()).await;
                     }
                 }
 
