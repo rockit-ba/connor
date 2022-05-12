@@ -1,20 +1,22 @@
-use connor::ConnorServer;
+//! 启动bin
+
+use connor::server_bootstrap::ConnorServer;
 use std::process::exit;
-use tracing::Level;
-use tracing_subscriber::filter::LevelFilter;
-use tracing_subscriber::fmt;
-use tracing_subscriber::layer::SubscriberExt;
-use tracing_subscriber::util::SubscriberInitExt;
+use time::macros::format_description;
+use tracing_subscriber::fmt::time::LocalTime;
 
 #[tokio::main]
 async fn main() {
-    // 控制台打印
-    tracing_subscriber::registry()
-        .with(LevelFilter::from_level(Level::INFO))
-        .with(fmt::layer())
+    let timer = LocalTime::new(format_description!(
+        "[year]-[month]-[day] [hour]-[minute]-[second]"
+    ));
+    tracing_subscriber::fmt()
+        .with_timer(timer)
+        .with_line_number(true)
+        .with_max_level(tracing::Level::INFO)
         .init();
 
-    let connor_server = ConnorServer::new();
+    let connor_server = &mut ConnorServer::new();
     if let Err(err) = connor_server.start().await {
         println!("{:?}", err);
         exit(1);

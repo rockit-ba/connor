@@ -1,9 +1,9 @@
+use crate::models::{TcpReader, TcpWriter};
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
-use crate::models::{TcpReader, TcpWriter};
 
 #[allow(dead_code)]
 pub struct TcpClient {
