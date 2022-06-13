@@ -10,7 +10,7 @@ use bytes::Bytes;
 use futures::SinkExt;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 /// 根据inbound handle 发送的消息进行响应
 pub async fn outbound_handle_resp(data: InboundHandleSingleEvent, writer: Arc<Mutex<TcpWriter>>) {
@@ -51,7 +51,11 @@ pub async fn outbound_handle_resp(data: InboundHandleSingleEvent, writer: Arc<Mu
         }
         // 服务心跳响应（对client 每次发送心跳请求的响应）
         InboundHandleSingleEvent::HeartbeatResp { success } => {
-            info!("Listener Heartbeat event");
+            if success {
+                info!("Listener Heartbeat event, that's ok");
+            } else {
+                warn!("Listener Heartbeat event, and need to reregistry");
+            }
             let heartbeat_response = HeartbeatResponse { success };
             response(&mut writer, heartbeat_response.to_json()).await;
         }

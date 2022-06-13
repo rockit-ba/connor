@@ -21,6 +21,7 @@ use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info, warn};
 use crate::config::SERVER_CONFIG;
+use crate::PeerCluster;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -35,6 +36,9 @@ pub struct ConnorServer {
     servers: ServersMap,
     // 心跳请求数据
     servers_heartbeat: ServersHeartbeatMap,
+    // 集群实例
+    #[allow(dead_code)]
+    peer_cluster: PeerCluster,
 }
 
 impl Debug for ConnorServer {
@@ -50,6 +54,7 @@ impl Default for ConnorServer {
             servers_heartbeat: ServersHeartbeatMap::new(RwLock::new(
                 HashMap::<String, SystemTime>::new(),
             )),
+            peer_cluster: PeerCluster { clients: Arc::new(Default::default()) }
         }
     }
 }
@@ -117,6 +122,14 @@ impl ConnorServer {
 
         self.heartbeat_task(broad_tx.clone());
         info!("heartbeat_task start with [{}]", self.addr.as_str());
+
+        // 开启任务，连接集群中的其它实例
+        let mut peer_cluster = self.peer_cluster.clone();
+        tokio::spawn(async move {
+            let cluster = &SERVER_CONFIG.cluster_address;
+            // 初始化获取server 客户端实例
+            peer_cluster.init(cluster).await;
+        });
 
         while let Some(socket) = listener_stream.try_next().await? {
             let peer_addr = socket.peer_addr().unwrap().to_string();

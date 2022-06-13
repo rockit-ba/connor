@@ -80,7 +80,7 @@ pub enum InboundHandleSingleEvent {
     ServiceNamesResp { service_names: Vec<String> },
     /// service 状态检测
     ServiceCheckResp { service_id: String },
-    /// 心跳检测
+    /// 心跳检测(true: 心跳正常，false: 之前存在心跳超时，需要重新注册到服务端)
     HeartbeatResp { success: bool },
 }
 #[derive(PartialEq, Debug, Clone)]
