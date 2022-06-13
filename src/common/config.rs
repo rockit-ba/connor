@@ -17,6 +17,7 @@ lazy_static! {
 pub struct ServerConfig {
     /// 当前服务器的名称标识
     pub server_address: String,
+    pub cluster_address: Vec<String>,
 }
 
 impl ServerConfig {

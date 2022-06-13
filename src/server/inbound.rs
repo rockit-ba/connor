@@ -94,7 +94,7 @@ pub async fn inbound_handle(
         }
         // 心跳检测请求
         RpcKind::Heartbeat => {
-            heartbeat::handle(&params.json, services_heartbeat_map).await;
+            heartbeat::handle(&params.json, services_heartbeat_map, services_map).await;
             params
                 .unicast(InboundHandleSingleEvent::HeartbeatResp { success: true })
                 .await;
