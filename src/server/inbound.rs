@@ -17,6 +17,7 @@ use crate::server_bootstrap::{ServersHeartbeatMap, ServersMap};
 use tokio::sync::broadcast::Sender;
 use tokio::sync::mpsc::Sender as SingleSender;
 use tracing::error;
+use crate::PeerCluster;
 
 /// 消息入站处理参数
 pub struct InboundParams {
@@ -59,11 +60,12 @@ pub async fn inbound_handle(
     params: InboundParams,
     services_map: ServersMap,
     services_heartbeat_map: ServersHeartbeatMap,
+    peer_cluster: PeerCluster,
 ) {
     match params.rpc_kind {
         // 服务注册
         RpcKind::Registry => {
-            let new_service = registry::handle(&params.json, services_map).await;
+            let new_service = registry::handle(&params.json, services_map,peer_cluster).await;
             // 首先发布此次请求的响应事件
             params
                 .unicast(InboundHandleSingleEvent::ServiceRegistryResp { success: true })

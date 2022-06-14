@@ -141,6 +141,7 @@ impl ConnorServer {
 
             let services_map = self.servers.clone();
             let services_heartbeat_map = self.servers_heartbeat.clone();
+            let peer_cluster = self.peer_cluster.clone();
 
             // channel
             let (writer, mut reader) = Framed::new(socket, LengthDelimitedCodec::new()).split();
@@ -185,6 +186,7 @@ impl ConnorServer {
                             inbound_params,
                             services_map.clone(),
                             services_heartbeat_map.clone(),
+                            peer_cluster.clone(),
                         )
                         .await;
                     }

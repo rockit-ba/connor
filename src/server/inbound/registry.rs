@@ -4,14 +4,15 @@ use crate::models::request::RegistryRequest;
 use crate::models::{InboundHandleBroadcastEvent, RpcCodec};
 use crate::server_bootstrap::ServersMap;
 use tracing::info;
+use crate::PeerCluster;
 
 /// 请求处理
 ///
 /// 返回此次注册的服务结构体
-pub async fn handle(json: &str, map: ServersMap) -> InboundHandleBroadcastEvent {
+pub async fn handle(json: &str, map: ServersMap, peer_cluster: PeerCluster) -> InboundHandleBroadcastEvent {
     let registry_req = RegistryRequest::from_json(json);
     info!("inbound data [ {:?} ]", &registry_req);
-    // 存储注册的服务
+    // 存储注册进来的服务
     let service = &registry_req.service;
     {
         let mut servers = map.write();
@@ -24,6 +25,8 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleBroadcastEvent 
             }
         }
     }
+    // TODO 遍历客户端连接，分发注册信息
+
     InboundHandleBroadcastEvent::AddServiceResp {
         service_name: service.name.clone(),
         service_list: map.read().get(&service.name).unwrap().clone(),
