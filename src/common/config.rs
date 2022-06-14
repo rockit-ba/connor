@@ -1,9 +1,8 @@
 //! 配置文件解析
-use std::path::PathBuf;
-use lazy_static::lazy_static;
 use config::{Config, File, FileFormat};
+use lazy_static::lazy_static;
+use std::path::PathBuf;
 use tracing::info;
-
 
 // 加载全局 ServerConfig
 lazy_static! {
@@ -26,16 +25,17 @@ impl ServerConfig {
         let path_buf = Self::get_conf_path();
         let config = Config::builder()
             .add_source(File::new(path_buf.to_str().unwrap(), FileFormat::Yaml))
-            .build().expect(err_msg);
+            .build()
+            .expect(err_msg);
         config.try_deserialize::<ServerConfig>().expect(err_msg)
     }
 
     /// 获取配置文件path
-    fn get_conf_path() -> PathBuf  {
+    fn get_conf_path() -> PathBuf {
         let work_dir = std::env::current_exe().unwrap();
         let mut path_buf = work_dir.parent().unwrap().join("config");
         path_buf.push("conf.yaml");
-        info!("加载配置文件：{:?}",&path_buf);
+        info!("加载配置文件：{:?}", &path_buf);
         path_buf
     }
 }

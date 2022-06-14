@@ -1,10 +1,10 @@
-use std::sync::Arc;
-use std::thread::sleep;
 use crate::models::{TcpReader, TcpWriter};
 use anyhow::Result;
 use bytes::{Bytes, BytesMut};
 use futures::{SinkExt, StreamExt, TryStreamExt};
 use parking_lot::RwLock;
+use std::sync::Arc;
+use std::thread::sleep;
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info};
@@ -17,7 +17,7 @@ pub struct PeerCluster {
     pub clients: PeerClient,
 }
 impl PeerCluster {
-    pub async fn init(&mut self ,cluster_addr: &Vec<String>) {
+    pub async fn init(&mut self, cluster_addr: &Vec<String>) {
         for addr in cluster_addr {
             loop {
                 match TcpClient::new(addr).await {
@@ -54,7 +54,7 @@ impl TcpClient {
 
         let transport = Framed::new(tcp_stream, LengthDelimitedCodec::new());
         let (writer, reader) = transport.split();
-        Ok(TcpClient {reader, writer })
+        Ok(TcpClient { reader, writer })
     }
 
     #[allow(dead_code)]

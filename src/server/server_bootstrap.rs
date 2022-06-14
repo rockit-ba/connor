@@ -1,10 +1,12 @@
 //! connor server_bootstrap
 
+use crate::config::SERVER_CONFIG;
 use crate::custom_error::Byte2JsonErr;
 use crate::models::{InboundHandleBroadcastEvent, InboundHandleSingleEvent, NewService, RpcKind};
 use crate::server::inbound::InboundParams;
 use crate::server::outbound::outbound_handle_broad;
 use crate::server::{inbound_handle, outbound_handle_resp};
+use crate::PeerCluster;
 use anyhow::Result;
 use futures::{StreamExt, TryStreamExt};
 use parking_lot::RwLock;
@@ -20,8 +22,6 @@ use tokio::time::sleep;
 use tokio_stream::wrappers::TcpListenerStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use tracing::{error, info, warn};
-use crate::config::SERVER_CONFIG;
-use crate::PeerCluster;
 
 /// 存放已经注册进来的所有的服务，key是service-name
 pub type ServersMap = Arc<RwLock<HashMap<String, Vec<NewService>>>>;
@@ -54,7 +54,9 @@ impl Default for ConnorServer {
             servers_heartbeat: ServersHeartbeatMap::new(RwLock::new(
                 HashMap::<String, SystemTime>::new(),
             )),
-            peer_cluster: PeerCluster { clients: Arc::new(Default::default()) }
+            peer_cluster: PeerCluster {
+                clients: Arc::new(Default::default()),
+            },
         }
     }
 }

@@ -1,7 +1,7 @@
+mod client;
 mod common;
 mod server;
-mod client;
 
-pub use common::{custom_error,models,config};
+pub use client::{PeerCluster, TcpClient};
+pub use common::{config, custom_error, models};
 pub use server::server_bootstrap;
-pub use client::{TcpClient,PeerCluster};

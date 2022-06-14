@@ -11,7 +11,11 @@ use tracing::info;
 /// 判断servers_map中是否存在该实例，如果不存在，表明是之前心跳超时被删除的实例，需要通知客户端重新注册实例
 ///
 /// 无返回值
-pub async fn handle(json: &str, services_heartbeat_map: ServersHeartbeatMap, services_map: ServersMap) -> InboundHandleSingleEvent {
+pub async fn handle(
+    json: &str,
+    services_heartbeat_map: ServersHeartbeatMap,
+    services_map: ServersMap,
+) -> InboundHandleSingleEvent {
     let heartbeat_req = HeartbeatRequest::from_json(json);
     let service_id = &heartbeat_req.service_id;
     info!("inbound data [ {:?} ]", &heartbeat_req);
@@ -35,11 +39,12 @@ pub async fn handle(json: &str, services_heartbeat_map: ServersHeartbeatMap, ser
 
     {
         let read_guard = services_map.read();
-        let flag = read_guard.values()
+        let flag = read_guard
+            .values()
             .flatten()
-            .find(|service| { service.id.eq(service_id) })
+            .find(|service| service.id.eq(service_id))
             .map_or(false, |_| true);
-        InboundHandleSingleEvent::HeartbeatResp {success: flag}
+        InboundHandleSingleEvent::HeartbeatResp { success: flag }
     }
 }
 
@@ -65,5 +70,4 @@ mod tests {
             }
         }
     }
-
 }
