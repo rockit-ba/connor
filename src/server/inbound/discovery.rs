@@ -10,8 +10,7 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleSingleEvent {
     info!("inbound data [ {:?} ]", &discovery_req);
     let mut services = None;
     {
-        let map = map.read();
-        if let Some(lists) = map.get(&discovery_req.service_name) {
+        if let Some(lists) = map.read().get(&discovery_req.service_name) {
             services = Some(lists.clone());
         }
     }

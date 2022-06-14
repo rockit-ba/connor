@@ -10,8 +10,7 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleSingleEvent {
     info!("inbound data [ {:?} ]", &service_names_request);
     let service_names;
     {
-        let map = map.read();
-        service_names = map.keys().cloned().collect();
+        service_names = map.read().keys().cloned().collect();
     }
 
     InboundHandleSingleEvent::ServiceNamesResp { service_names }

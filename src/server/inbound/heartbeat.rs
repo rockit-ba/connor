@@ -38,8 +38,7 @@ pub async fn handle(
     }
 
     {
-        let read_guard = services_map.read();
-        let flag = read_guard
+        let flag = services_map.read()
             .values()
             .flatten()
             .find(|service| service.id.eq(service_id))

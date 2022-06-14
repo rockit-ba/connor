@@ -10,8 +10,7 @@ pub async fn handle(json: &str, map: ServersMap) -> InboundHandleSingleEvent {
     info!("inbound data [ {:?} ]", &check_request);
     let service_id: String;
     {
-        let map = map.read();
-        service_id = map
+        service_id = map.read()
             .values()
             .flat_map(|ele| {
                 ele.iter()
