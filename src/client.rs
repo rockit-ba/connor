@@ -7,7 +7,7 @@ use futures::{SinkExt, StreamExt, TryStreamExt};
 use parking_lot::RwLock;
 use tokio::net::TcpStream;
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
-use tracing::{info, warn};
+use tracing::{error, info};
 
 type PeerClient = Arc<RwLock<Vec<TcpClient>>>;
 /// 集群客户端集合
@@ -27,7 +27,7 @@ impl PeerCluster {
                         break;
                     }
                     Err(e) => {
-                        warn!("Connect peer [{}] failed, err: [{:?}]", addr, e);
+                        error!("Connect peer [{}] failed, err: [{:?}]", addr, e);
                         // 出错重试
                         sleep(tokio::time::Duration::from_secs(5));
                     }
@@ -49,6 +49,7 @@ impl TcpClient {
     /// 根据一个地址创建一个可读写的客户端
     pub async fn new(connect: &str) -> Result<Self> {
         info!("Connect peer [{}] ....", connect);
+        // tokio::time::timeout(TcpStream::connect(...))
         let tcp_stream = TcpStream::connect(connect).await?;
 
         let transport = Framed::new(tcp_stream, LengthDelimitedCodec::new());
